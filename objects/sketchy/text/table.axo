@@ -3,14 +3,13 @@
       <sDescription>Allocate table in RAM memory for texts to be displayed on an OLED screen. They can be drawn to the screen using the sketchy/renderer and also have to be defined as sketchy/table/objects.</sDescription>
       <author>Karlo Sono</author>
       <license>MIT</license>
-      <helpPatch></helpPatch>
       <inlets/>
       <outlets/>
       <displays/>
       <params/>
       <attribs>
          <text name="init"/>
-         <spinner name="entries" description="Maximum amount of strings that fit in table" MinValue="1" MaxValue="1024" DefaultValue="32"/>
+         <spinner name="entries" description="Maximum amount of strings that fit in table" MinValue="0" MaxValue="1024" DefaultValue="32"/>
          <spinner name="length" description="Maximum amount of characters in each string" MinValue="8" MaxValue="128" DefaultValue="32"/>
       </attribs>
       <code.declaration><![CDATA[static const uint32_t LENGTH = attr_entries;

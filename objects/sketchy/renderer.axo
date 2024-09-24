@@ -1,6 +1,6 @@
 <objdefs appVersion="1.0.12">
    <obj.normal id="renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63">
-      <sDescription>The renderer object continuously renders visual objects to a connected SSD1306/1106 OLED display. Objects and texts must be defined and configured in the respective tables. Please use the sketchy objects to initialize and configure all elements. Refer to help patches to see this in action.</sDescription>
+      <sDescription>The renderer object continuously renders visual objects to a connected SSD1306/1106 OLED display. Objects and texts must be defined and configured in the respective tables. Use a sketchy/object/table and sketchy/object/update to initialize and configure all visual elements. For rendering text you will also need a sketchy/text/table and sketchy/text/update. If you do not want to render text, just initialize an empty sketchy/text/table and set entries to 0.</sDescription>
       <author>Karlo Sono</author>
       <license>MIT</license>
       <inlets>
@@ -33,13 +33,13 @@
                <string>0x3D</string>
             </CEntries>
          </combo>
-         <objref name="table"/>
-         <objref name="text"/>
+         <objref name="objects" description="reference to a sketchy/object/table"/>
+         <objref name="texts" description="reference to a sketchy/text/table (if needed)"/>
       </attribs>
       <depends>
          <depend>SD1</depend>
-         <depend>SPID1</depend>
          <depend>I2CD1</depend>
+         <depend>SPID1</depend>
       </depends>
       <code.declaration><![CDATA[#include "./font5x8_offset.h"
 
@@ -270,12 +270,12 @@ void draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color, ui
 }
 
 void draw_string_from_index(int text_id, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, bool center, bool center_v = false, uint8_t scale = 1) {
-    const char* str = attr_text.array[text_id];
+    const char* str = attr_texts.array[text_id];
     int16_t char_width = 5;  // Actual character width
     int16_t char_spacing = 1; // Spacing after each character
     int16_t total_char_width = char_width + char_spacing;
     int16_t char_height = 8; // Assuming 8px height based on font5x8_offset
-    size_t max_length = attr_text.STRING_LENGTH;
+    size_t max_length = attr_texts.STRING_LENGTH;
 
     // First pass: Calculate total height (only if vertical centering is requested)
     int total_lines = 0;
@@ -458,74 +458,74 @@ void draw_filled_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_
 }
 
 void render() {
-	for (uint8_t i = 0; i < attr_table.LENGTH; i++) {
-		if (attr_table.array[i][attr_table.FIELD_TYPE] == attr_table.TYPE_INVISIBLE) {
+	for (uint8_t i = 0; i < attr_objects.LENGTH; i++) {
+		if (attr_objects.array[i][attr_objects.FIELD_TYPE] == attr_objects.TYPE_INVISIBLE) {
 			continue;
 		}
 		
-		int16_t x = attr_table.array[i][attr_table.FIELD_X];
-		int16_t y = attr_table.array[i][attr_table.FIELD_Y];
-		int16_t w = attr_table.array[i][attr_table.FIELD_W];
-		int16_t h = attr_table.array[i][attr_table.FIELD_H];
-		uint8_t color = attr_table.array[i][attr_table.FIELD_COLOR];
-		uint8_t scale = attr_table.array[i][attr_table.FIELD_SCALE];
+		int16_t x = attr_objects.array[i][attr_objects.FIELD_X];
+		int16_t y = attr_objects.array[i][attr_objects.FIELD_Y];
+		int16_t w = attr_objects.array[i][attr_objects.FIELD_W];
+		int16_t h = attr_objects.array[i][attr_objects.FIELD_H];
+		uint8_t color = attr_objects.array[i][attr_objects.FIELD_COLOR];
+		uint8_t scale = attr_objects.array[i][attr_objects.FIELD_SCALE];
 
-		switch (attr_table.array[i][attr_table.FIELD_TYPE]) {
-			case attr_table.TYPE_RECT:
+		switch (attr_objects.array[i][attr_objects.FIELD_TYPE]) {
+			case attr_objects.TYPE_RECT:
 				draw_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_table.TYPE_FILLED_RECT:
+			case attr_objects.TYPE_FILLED_RECT:
 				draw_filled_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_table.TYPE_ROUNDED_RECT:
+			case attr_objects.TYPE_ROUNDED_RECT:
 				draw_rounded_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_table.TYPE_FILLED_ROUNDED_RECT:
+			case attr_objects.TYPE_FILLED_ROUNDED_RECT:
 				draw_filled_rounded_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_table.TYPE_LINE:
-				if (i > 0 && attr_table.array[i - 1][attr_table.FIELD_TYPE] == attr_table.TYPE_LINE) {
-					int16_t prev_x = attr_table.array[i - 1][attr_table.FIELD_X];
-					int16_t prev_y = attr_table.array[i - 1][attr_table.FIELD_Y];
+			case attr_objects.TYPE_LINE:
+				if (i > 0 && attr_objects.array[i - 1][attr_objects.FIELD_TYPE] == attr_objects.TYPE_LINE) {
+					int16_t prev_x = attr_objects.array[i - 1][attr_objects.FIELD_X];
+					int16_t prev_y = attr_objects.array[i - 1][attr_objects.FIELD_Y];
 					draw_line(prev_x, prev_y, x, y, color, scale);
 				}
 				break;
 
-			case attr_table.TYPE_TEXT:
+			case attr_objects.TYPE_TEXT:
 				draw_string_from_index(
-					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
 					x, y, w, h, color, false, false, scale
 				);
 				break;
 
-			case attr_table.TYPE_TEXT_CENTER_X:
+			case attr_objects.TYPE_TEXT_CENTER_X:
 				draw_string_from_index(
-					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
 					x, y, w, h, color, true, false, scale
 				);
 				break;
 
-			case attr_table.TYPE_TEXT_CENTER_Y:
+			case attr_objects.TYPE_TEXT_CENTER_Y:
 				draw_string_from_index(
-					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
 					x, y, w, h, color, false, true, scale
 				);
 				break;
 
-			case attr_table.TYPE_TEXT_CENTER_BOTH:
+			case attr_objects.TYPE_TEXT_CENTER_BOTH:
 				draw_string_from_index(
-					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
 					x, y, w, h, color, true, true, scale
 				);
 				break;
 		}
 	}
 
-	attr_table.dirty = false;
+	attr_objects.dirty = false;
 }]]></code.declaration>
       <code.init><![CDATA[// setup the pins
 palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(4)|PAL_STM32_PUDR_PULLUP|PAL_STM32_OTYPE_OPENDRAIN);// SCL
@@ -552,17 +552,17 @@ palSetPadMode(GPIOB, 8, PAL_MODE_INPUT_ANALOG);
 palSetPadMode(GPIOB, 9, PAL_MODE_INPUT_ANALOG);]]></code.dispose>
       <code.krate><![CDATA[if (inlet_print && !pprint) {
   pprint = true;
-  for (uint8_t i = 0; i < attr_table.LENGTH; i++) {
+  for (uint8_t i = 0; i < attr_objects.LENGTH; i++) {
     LogTextMessage(
       "i: %3d, type: %3d, x: %3d, y: %3d, w: %3d, h: %3d, color: %3d, text_id: %3d",
       i,
-      attr_table.array[i][attr_table.FIELD_TYPE],
-      attr_table.array[i][attr_table.FIELD_X], 
-      attr_table.array[i][attr_table.FIELD_Y], 
-      attr_table.array[i][attr_table.FIELD_W],
-      attr_table.array[i][attr_table.FIELD_H], 
-      attr_table.array[i][attr_table.FIELD_COLOR],
-      attr_table.array[i][attr_table.FIELD_TEXT_ID]
+      attr_objects.array[i][attr_objects.FIELD_TYPE],
+      attr_objects.array[i][attr_objects.FIELD_X], 
+      attr_objects.array[i][attr_objects.FIELD_Y], 
+      attr_objects.array[i][attr_objects.FIELD_W],
+      attr_objects.array[i][attr_objects.FIELD_H], 
+      attr_objects.array[i][attr_objects.FIELD_COLOR],
+      attr_objects.array[i][attr_objects.FIELD_TEXT_ID]
     );
   }
   LogTextMessage("");

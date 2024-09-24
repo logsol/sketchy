@@ -1,0 +1,1530 @@
+<patch-1.0 appVersion="1.0.12">
+   <comment type="patch/comment" x="14" y="28" text="initialize the object table"/>
+   <comment type="patch/comment" x="238" y="28" text="Rendering section                                           "/>
+   <obj type="lfo/square" uuid="de6909eb64db13af5b43f979a4c130024b3a4793" name="set FPS" x="546" y="42">
+      <params>
+         <frac32.s.map name="pitch" value="32.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="sketchy/utils/rapid_triggers" uuid="f0875364-e95e-442b-b597-869f3414ff2f" name="rapid triggers" x="658" y="42">
+      <params/>
+      <attribs>
+         <spinner attributeName="count" value="10"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="966" y="42" text="Display parameter descriptions"/>
+   <comment type="patch/comment" x="1218" y="42" text="Object types:"/>
+   <obj type="sketchy/object/table" uuid="33169757-5339-4296-a6fd-66cca7728ce9" name="object_table" x="14" y="56">
+      <params/>
+      <attribs>
+         <text attributeName="init">
+            <sText><![CDATA[/** 
+ * You can pre define some your objects like this:
+ * 
+ * array[index][FIELD_TYPE]: 
+ *  - TYPE_INVISIBLE 
+ *  - TYPE_RECT 
+ *  - TYPE_FILLED_RECT 
+ *  - TYPE_ROUNDED_RECT 
+ *  - TYPE_FILLED_ROUNDED_RECT 
+ *  - TYPE_LINE
+ *  
+ * array[index][FIELD_X]: 
+ *  - integer number
+ *  
+ * array[index][FIELD_Y]: 
+ *  - integer number
+ *  
+ * array[index][FIELD_W]: 
+ *  - integer number
+ *  
+ * array[index][FIELD_H]: 
+ *  - integer number
+ * 
+ * array[index][FIELD_COLOR]: 
+ *  - COLOR_BRIGHT 
+ *  - COLOR_DARK 
+ *  - COLOR_INVERT
+ * 
+ * You can modify these attributes later by accessing the table
+ * 
+ */
+
+
+
+
+
+// Try the example below to create a double border around the screen
+
+/*
+uint8_t i = 7;
+
+array[i][FIELD_TYPE] = TYPE_RECT;
+array[i][FIELD_X] = 0;
+array[i][FIELD_Y] = 0;
+array[i][FIELD_W] = 127;
+array[i][FIELD_H] = 63;
+array[i][FIELD_COLOR] = COLOR_BRIGHT;
+i++;
+
+array[i][FIELD_TYPE] = TYPE_ROUNDED_RECT;
+array[i][FIELD_X] = 2;
+array[i][FIELD_Y] = 2;
+array[i][FIELD_W] = 123;
+array[i][FIELD_H] = 59;
+array[i][FIELD_COLOR] = COLOR_INVERT;
+i++;
+*/]]></sText>
+         </text>
+         <spinner attributeName="entries" value="32"/>
+      </attribs>
+   </obj>
+   <obj type="ctrl/button" uuid="ef3d13774349df85aa9bfecf30dbc91ab8488b3f" name="print table" x="238" y="56">
+      <params>
+         <bool32.mom name="b" value="0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="sketchy/renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63" name="renderer_1" x="322" y="56">
+      <params/>
+      <attribs>
+         <combo attributeName="type" selection="SH1106"/>
+         <combo attributeName="I2CADDR" selection="0x3C"/>
+         <objref attributeName="objects" obj="object_table"/>
+         <objref attributeName="texts" obj="text_table"/>
+      </attribs>
+   </obj>
+   <patcher type="patch/patcher" uuid="02aa495b-cce5-4715-b1dd-f1b687ea309c" name="text positions" x="938" y="56">
+      <params/>
+      <attribs/>
+      <subpatch appVersion="1.0.12">
+         <obj type="patch/inlet b" uuid="3b0d3eacb5bb978cb05d1372aa2714d5a4790844" name="in" x="70" y="126">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="logic/counter" uuid="7a141ba82230e54e5f5cd12da5dbe5a74ba854a5" name="object counter" x="182" y="126">
+            <params>
+               <int32 name="maximum" value="10"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="width" x="350" y="126">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="25"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="i" x="714" y="154">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="type: text" x="616" y="196">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="9"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="type" x="714" y="196">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="sss/math/divremc" uuid="1638b705-df81-436f-acf6-3399bf364363" name="x mod" x="280" y="210">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="x * 25" x="434" y="210">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="horizontal items" x="182" y="224">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="5"/>
+            </attribs>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="x shift right" x="518" y="238">
+            <params>
+               <int32 name="c" value="3"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="x" x="714" y="238">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="calc y" x="420" y="280">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="y shift down" x="616" y="280">
+            <params>
+               <int32 name="c" value="9"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="y" x="714" y="280">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="height" x="322" y="294">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="26"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="w" x="714" y="322">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="h" x="714" y="364">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="textid" x="714" y="406">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="color: white" x="616" y="448">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="0"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="color" x="714" y="448">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="set scale" x="518" y="490">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="1"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="scale" x="714" y="490">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet b" uuid="191792f616d4835dba0b55375474a12942e5bcbd" name="trig" x="714" y="532">
+            <params/>
+            <attribs/>
+         </obj>
+         <nets>
+            <net>
+               <source obj="object counter" outlet="o"/>
+               <dest obj="i" inlet="outlet"/>
+               <dest obj="textid" inlet="outlet"/>
+               <dest obj="x mod" inlet="a"/>
+            </net>
+            <net>
+               <source obj="width" outlet="out"/>
+               <dest obj="x * 25" inlet="b"/>
+               <dest obj="w" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="in" outlet="inlet"/>
+               <dest obj="object counter" inlet="trig"/>
+               <dest obj="trig" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="type: text" outlet="out"/>
+               <dest obj="type" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="x shift right" outlet="out"/>
+               <dest obj="x" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="horizontal items" outlet="out"/>
+               <dest obj="x mod" inlet="denominator"/>
+            </net>
+            <net>
+               <source obj="x mod" outlet="rem"/>
+               <dest obj="x * 25" inlet="a"/>
+            </net>
+            <net>
+               <source obj="height" outlet="out"/>
+               <dest obj="calc y" inlet="b"/>
+               <dest obj="h" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="y shift down" outlet="out"/>
+               <dest obj="y" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="calc y" outlet="result"/>
+               <dest obj="y shift down" inlet="in"/>
+            </net>
+            <net>
+               <source obj="x mod" outlet="div"/>
+               <dest obj="calc y" inlet="a"/>
+            </net>
+            <net>
+               <source obj="x * 25" outlet="result"/>
+               <dest obj="x shift right" inlet="in"/>
+            </net>
+            <net>
+               <source obj="color: white" outlet="out"/>
+               <dest obj="color" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="set scale" outlet="out"/>
+               <dest obj="scale" inlet="outlet"/>
+            </net>
+         </nets>
+         <settings>
+            <subpatchmode>no</subpatchmode>
+         </settings>
+         <notes><![CDATA[]]></notes>
+         <windowPos>
+            <x>116</x>
+            <y>38</y>
+            <width>1214</width>
+            <height>845</height>
+         </windowPos>
+      </subpatch>
+   </patcher>
+   <obj type="sketchy/object/update" uuid="1a841356-5eca-48ed-a884-c642da9e205b" name="text object settings" x="1036" y="56">
+      <params/>
+      <attribs>
+         <objref attributeName="table" obj="object_table"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="1232" y="56" text="0: invisible"/>
+   <comment type="patch/comment" x="1232" y="70" text="1: rectangle"/>
+   <obj type="ksoloti/gills/pot p 2" uuid="8141e8d8-f90f-4218-a8b7-b9f9776c908b" name="pot_1" x="798" y="84">
+      <params/>
+      <attribs>
+         <combo attributeName="pots" selection="1 | 2"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="1232" y="84" text="2: filled rectangle"/>
+   <comment type="patch/comment" x="1232" y="98" text="3: rectangle with 2px rounded edges"/>
+   <comment type="patch/comment" x="1232" y="112" text="4: filled rectangle with 2px rounded edges"/>
+   <comment type="patch/comment" x="1232" y="126" text="5: line (connects consecutive line objects)"/>
+   <comment type="patch/comment" x="14" y="140" text="Initialize the text table"/>
+   <comment type="patch/comment" x="1232" y="140" text="6: text (top-left aligned)"/>
+   <comment type="patch/comment" x="1232" y="154" text="7: text (x centered)"/>
+   <obj type="sketchy/text/table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900" name="text_table" x="14" y="168">
+      <params/>
+      <attribs>
+         <text attributeName="init">
+            <sText><![CDATA[]]></sText>
+         </text>
+         <spinner attributeName="entries" value="32"/>
+         <spinner attributeName="length" value="8"/>
+      </attribs>
+   </obj>
+   <obj type="ksoloti/gills/pot p 2" uuid="8141e8d8-f90f-4218-a8b7-b9f9776c908b" name="pot_2" x="798" y="168">
+      <params/>
+      <attribs>
+         <combo attributeName="pots" selection="3 | 4"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="1232" y="168" text="8: text (y centered)"/>
+   <comment type="patch/comment" x="1232" y="182" text="9: text (x+y centered)"/>
+   <comment type="patch/comment" x="1218" y="210" text="Color:"/>
+   <comment type="patch/comment" x="1232" y="224" text="0: bright pixel"/>
+   <comment type="patch/comment" x="1232" y="238" text="1: dark pixel"/>
+   <obj type="ksoloti/gills/pot p 2" uuid="8141e8d8-f90f-4218-a8b7-b9f9776c908b" name="pot_3" x="798" y="252">
+      <params/>
+      <attribs>
+         <combo attributeName="pots" selection="5 | 6"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="1232" y="252" text="2: invert pixel"/>
+   <comment type="patch/comment" x="14" y="266" text="Update the text in table"/>
+   <obj type="jaffa/string/c4" uuid="e7c37b3e-e478-4967-8b0b-fc400c050e6a" name="c4_1" x="14" y="294">
+      <params/>
+      <attribs>
+         <table attributeName="1" table="FLT CUT"/>
+         <table attributeName="2" table="FLT RSN"/>
+         <table attributeName="3" table="FLT DPT"/>
+         <table attributeName="4" table="FLT ATT"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="952" y="294" text="Display poti values as rectangles"/>
+   <patcher type="patch/patcher" uuid="44eff01e-e573-43ab-8a8e-0ad5478a6f9c" name="poti values -&gt; rect" x="910" y="308">
+      <params/>
+      <attribs/>
+      <subpatch appVersion="1.0.12">
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p0" x="84" y="14">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p1" x="84" y="56">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="mux/mux 8" uuid="de5167d9da39b04039376e8cc620ea2afc22e28a" name="mux_2" x="630" y="84">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p2" x="84" y="98">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p3" x="84" y="140">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p4" x="84" y="182">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p5" x="84" y="224">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p6" x="84" y="266">
+            <params/>
+            <attribs/>
+         </obj>
+         <patchobj type="patch/object" uuid="1b7d30e7-d53b-43a1-a344-499c40809761" name="mux 10" x="280" y="294">
+            <params/>
+            <attribs/>
+            <object id="patch/object" uuid="1b7d30e7-d53b-43a1-a344-499c40809761">
+               <sDescription>input multiplexer. Output is i1 when s &lt; 1, i[i] when....</sDescription>
+               <author>Karlo Sono</author>
+               <license>BSD</license>
+               <helpPatch>mux.axh</helpPatch>
+               <inlets>
+                  <frac32 name="i0" description="input 0"/>
+                  <frac32 name="i1" description="input 1"/>
+                  <frac32 name="i2" description="input 2"/>
+                  <frac32 name="i3" description="input 3"/>
+                  <frac32 name="i4" description="input 4"/>
+                  <frac32 name="i5" description="input 5"/>
+                  <frac32 name="i6" description="input 6"/>
+                  <frac32 name="i7" description="input 7"/>
+                  <frac32 name="i8" description="input 8"/>
+                  <frac32 name="i9" description="input 9"/>
+                  <int32.positive name="s" description="select"/>
+               </inlets>
+               <outlets>
+                  <frac32 name="o" description="output"/>
+               </outlets>
+               <displays/>
+               <params/>
+               <attribs/>
+               <includes/>
+               <code.krate><![CDATA[switch(inlet_s){
+      case 0: outlet_o= inlet_i0;break;
+      case 1: outlet_o= inlet_i1;break;
+      case 2: outlet_o= inlet_i2;break;
+      case 3: outlet_o= inlet_i3;break;
+      case 4: outlet_o= inlet_i4;break;
+      case 5: outlet_o= inlet_i5;break;
+      case 6: outlet_o= inlet_i6;break;
+      case 7: outlet_o= inlet_i7;break;
+      case 8: outlet_o= inlet_i8;break;
+      case 9: outlet_o= inlet_i9;break;
+      default: outlet_o= inlet_i9;break;
+}]]></code.krate>
+            </object>
+         </patchobj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p7" x="84" y="308">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p8" x="84" y="350">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="p9" x="84" y="392">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet b" uuid="3b0d3eacb5bb978cb05d1372aa2714d5a4790844" name="trig in" x="84" y="434">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="logic/counter" uuid="7a141ba82230e54e5f5cd12da5dbe5a74ba854a5" name="counter_1" x="182" y="434">
+            <params>
+               <int32 name="maximum" value="10"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="width" x="616" y="448">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="25"/>
+            </attribs>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="+10: rect id" x="966" y="448">
+            <params>
+               <int32 name="c" value="10"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="i" x="1162" y="462">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="type: filled rect" x="1064" y="504">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="2"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="type" x="1162" y="504">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="x shift right" x="966" y="518">
+            <params>
+               <int32 name="c" value="5"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="horizontal items" x="462" y="532">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="5"/>
+            </attribs>
+         </obj>
+         <obj type="sss/math/divremc" uuid="1638b705-df81-436f-acf6-3399bf364363" name="x mod" x="560" y="532">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="x * 25" x="700" y="532">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="w shrink" x="770" y="532">
+            <params>
+               <int32 name="c" value="-4"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="x" x="1162" y="546">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="y shift down" x="966" y="588">
+            <params>
+               <int32 name="c" value="32"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="y" x="1162" y="588">
+            <params/>
+            <attribs/>
+         </obj>
+         <patchobj type="patch/object" uuid="c55f5979-4586-4845-ac90-c3804228f916" name="ratio shrink" x="868" y="602">
+            <params/>
+            <attribs/>
+            <object id="patch/object" uuid="c55f5979-4586-4845-ac90-c3804228f916">
+               <inlets>
+                  <frac32 name="i1"/>
+                  <int32.positive name="i2"/>
+               </inlets>
+               <outlets>
+                  <int32.positive name="o"/>
+               </outlets>
+               <displays/>
+               <params/>
+               <attribs/>
+               <includes/>
+               <code.krate><![CDATA[outlet_o = (int32_t)(((int64_t)inlet_i2 * (inlet_i1 >> 6) + (1 << 20)) >> 21);]]></code.krate>
+            </object>
+         </patchobj>
+         <obj type="ctrl/i" uuid="a3786816db6ea5bc6ac4193a5cccdb2c83b83496" name="i_3" x="630" y="616">
+            <params>
+               <int32 name="value" value="26"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="calc y" x="700" y="616">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="phi/math/-+ i" uuid="e5bf3953ead204874692af5d85cww43a027g74f1" name="h shrink" x="770" y="616">
+            <params>
+               <int32 name="c" value="-4"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="w" x="1162" y="630">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/inv" uuid="4236d8dd952427e2aec6e830a48fddfba98dd4ad" name="inv_1" x="980" y="672">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="h" x="1162" y="672">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="color: invert" x="1064" y="686">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="2"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="color" x="1162" y="714">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="set scale" x="966" y="756">
+            <params/>
+            <attribs>
+               <spinner attributeName="value" value="1"/>
+            </attribs>
+         </obj>
+         <obj type="patch/outlet i" uuid="aae2176b26209e34e4fdeba5edb1ace82d178655" name="scale" x="1162" y="756">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="logic/change" uuid="96e39ae624c3f3c952cec4a95e1986ee0104f718" name="change_1" x="1064" y="798">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet b" uuid="191792f616d4835dba0b55375474a12942e5bcbd" name="trig" x="1162" y="798">
+            <params/>
+            <attribs/>
+         </obj>
+         <nets>
+            <net>
+               <source obj="counter_1" outlet="o"/>
+               <dest obj="+10: rect id" inlet="in"/>
+               <dest obj="x mod" inlet="a"/>
+               <dest obj="mux 10" inlet="s"/>
+            </net>
+            <net>
+               <source obj="+10: rect id" outlet="out"/>
+               <dest obj="change_1" inlet="in"/>
+               <dest obj="i" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="width" outlet="out"/>
+               <dest obj="x * 25" inlet="b"/>
+               <dest obj="w shrink" inlet="in"/>
+            </net>
+            <net>
+               <source obj="x * 25" outlet="result"/>
+               <dest obj="x shift right" inlet="in"/>
+            </net>
+            <net>
+               <source obj="horizontal items" outlet="out"/>
+               <dest obj="x mod" inlet="denominator"/>
+            </net>
+            <net>
+               <source obj="x mod" outlet="rem"/>
+               <dest obj="x * 25" inlet="a"/>
+            </net>
+            <net>
+               <source obj="i_3" outlet="out"/>
+               <dest obj="calc y" inlet="b"/>
+               <dest obj="h shrink" inlet="in"/>
+            </net>
+            <net>
+               <source obj="calc y" outlet="result"/>
+               <dest obj="y shift down" inlet="in"/>
+            </net>
+            <net>
+               <source obj="x mod" outlet="div"/>
+               <dest obj="calc y" inlet="a"/>
+            </net>
+            <net>
+               <source obj="h shrink" outlet="out"/>
+               <dest obj="ratio shrink" inlet="i2"/>
+            </net>
+            <net>
+               <source obj="mux 10" outlet="o"/>
+               <dest obj="ratio shrink" inlet="i1"/>
+            </net>
+            <net>
+               <source obj="p9" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i9"/>
+            </net>
+            <net>
+               <source obj="p8" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i8"/>
+            </net>
+            <net>
+               <source obj="p7" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i7"/>
+            </net>
+            <net>
+               <source obj="p6" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i6"/>
+            </net>
+            <net>
+               <source obj="p5" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i5"/>
+            </net>
+            <net>
+               <source obj="p4" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i4"/>
+            </net>
+            <net>
+               <source obj="p3" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i3"/>
+            </net>
+            <net>
+               <source obj="p2" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i2"/>
+            </net>
+            <net>
+               <source obj="p1" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i1"/>
+            </net>
+            <net>
+               <source obj="p0" outlet="inlet"/>
+               <dest obj="mux 10" inlet="i0"/>
+            </net>
+            <net>
+               <source obj="x shift right" outlet="out"/>
+               <dest obj="x" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="type: filled rect" outlet="out"/>
+               <dest obj="type" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="w shrink" outlet="out"/>
+               <dest obj="w" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="change_1" outlet="trig"/>
+               <dest obj="trig" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="trig in" outlet="inlet"/>
+               <dest obj="counter_1" inlet="trig"/>
+            </net>
+            <net>
+               <source obj="color: invert" outlet="out"/>
+               <dest obj="color" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="y shift down" outlet="out"/>
+               <dest obj="y" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="inv_1" outlet="out"/>
+               <dest obj="h" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="ratio shrink" outlet="o"/>
+               <dest obj="inv_1" inlet="in"/>
+            </net>
+            <net>
+               <source obj="set scale" outlet="out"/>
+               <dest obj="scale" inlet="outlet"/>
+            </net>
+         </nets>
+         <settings>
+            <subpatchmode>no</subpatchmode>
+         </settings>
+         <notes><![CDATA[]]></notes>
+         <windowPos>
+            <x>0</x>
+            <y>38</y>
+            <width>1512</width>
+            <height>944</height>
+         </windowPos>
+      </subpatch>
+   </patcher>
+   <obj type="sketchy/object/update" uuid="1a841356-5eca-48ed-a884-c642da9e205b" name="rectangle settings" x="1036" y="308">
+      <params/>
+      <attribs>
+         <objref attributeName="table" obj="object_table"/>
+      </attribs>
+   </obj>
+   <obj type="ksoloti/gills/pot p 2" uuid="8141e8d8-f90f-4218-a8b7-b9f9776c908b" name="pot_4" x="798" y="336">
+      <params/>
+      <attribs>
+         <combo attributeName="pots" selection="7 | 8"/>
+      </attribs>
+   </obj>
+   <obj type="ksoloti/gills/pot p 2" uuid="8141e8d8-f90f-4218-a8b7-b9f9776c908b" name="pot_5" x="798" y="420">
+      <params/>
+      <attribs>
+         <combo attributeName="pots" selection="9 | 10"/>
+      </attribs>
+   </obj>
+   <obj type="jaffa/string/c4" uuid="e7c37b3e-e478-4967-8b0b-fc400c050e6a" name="c4_2" x="14" y="476">
+      <params/>
+      <attribs>
+         <table attributeName="1" table="FLT DEC"/>
+         <table attributeName="2" table="ENV ATT"/>
+         <table attributeName="3" table="ENV DEC"/>
+         <table attributeName="4" table="ENV SUS"/>
+      </attribs>
+   </obj>
+   <obj type="sketchy/text/update" uuid="01079a7f-2a03-4c0a-a34c-9a9be161f774" name="text update" x="196" y="532">
+      <params/>
+      <attribs>
+         <objref attributeName="table" obj="text_table"/>
+      </attribs>
+   </obj>
+   <comment type="patch/comment" x="980" y="574" text="Audio engine"/>
+   <patcher type="patch/patcher" uuid="bf94eebf-7542-421e-b967-0c89fa0879cd" name="synth" x="910" y="588">
+      <params/>
+      <attribs/>
+      <subpatch appVersion="1.0.12">
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="cutoff" x="224" y="14">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/gain" uuid="6b4dd3da49f98e54900f6c20031f38f4624fa364" name="scale cutoff" x="322" y="14">
+            <params>
+               <frac32.u.map name="amp" value="4.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="math/-c" uuid="bc70bed87e5405985ade03f4806b9450609a9093" name="shift down" x="420" y="14">
+            <params>
+               <frac32.u.map name="c" value="0.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="resonance" x="224" y="98">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="rbrt/math/limit attr" uuid="f1dc45b8-467f-442c-9567-82feaf45b37a" name="limit_1" x="322" y="98">
+            <params/>
+            <attribs>
+               <spinner attributeName="hi" value="58"/>
+               <spinner attributeName="lo" value="0"/>
+            </attribs>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="flt dpt" x="224" y="196">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/gain" uuid="6b4dd3da49f98e54900f6c20031f38f4624fa364" name="scale dpt" x="322" y="196">
+            <params>
+               <frac32.u.map name="amp" value="4.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="flt attack" x="224" y="238">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="flt decay" x="224" y="280">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/gain" uuid="6b4dd3da49f98e54900f6c20031f38f4624fa364" name="scale attack" x="322" y="294">
+            <params>
+               <frac32.u.map name="amp" value="8.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="attack" x="224" y="322">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="decay" x="224" y="364">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="sustain" x="224" y="406">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/gain" uuid="6b4dd3da49f98e54900f6c20031f38f4624fa364" name="scale release" x="532" y="406">
+            <params>
+               <frac32.u.map name="amp" value="12.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="release" x="224" y="448">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/inlet f" uuid="5c585d2dcd9c05631e345ac09626a22a639d7c13" name="chorus snd" x="224" y="490">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="math/+" uuid="44553fdc8628c67ab535845ed1be304ad6c9553b" name="+_1" x="504" y="616">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="env/adsr m" uuid="98bd39fb828c392b28126d259cb5175e6f6ea34b" name="adsr_2" x="350" y="630">
+            <params>
+               <frac32.s.map name="a" value="-64.0"/>
+               <frac32.s.map name="d" value="-48.0"/>
+               <frac32.u.map name="s" value="0.0"/>
+               <frac32.s.map name="r" value="64.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="math/*" uuid="922423f2db9f222aa3e5ba095778288c446da47a" name="*_1" x="434" y="630">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="midi/in/keyb zone lru" uuid="36a44968a4f8b980273e94dca846b7544a3c45d2" name="keyb_1" x="224" y="798">
+            <params/>
+            <attribs>
+               <spinner attributeName="startNote" value="0"/>
+               <spinner attributeName="endNote" value="127"/>
+            </attribs>
+         </obj>
+         <obj type="osc/supersaw" uuid="ece83feb36cfaee7dc3964b75c485774ea0309cf" name="supersaw_1" x="448" y="798">
+            <params>
+               <frac32.s.map name="pitch" value="0.0"/>
+               <frac32.u.map name="detune" value="20.5"/>
+            </params>
+            <attribs/>
+         </obj>
+         <patchobj type="patch/object" uuid="2452371a-f62f-4da0-9f4e-ad253f696b28" name="korg35LPF" x="588" y="798">
+            <params/>
+            <attribs/>
+            <object id="patch/object" uuid="2452371a-f62f-4da0-9f4e-ad253f696b28">
+               <inlets>
+                  <frac32buffer name="in"/>
+                  <frac32 name="freq"/>
+                  <frac32 name="res"/>
+               </inlets>
+               <outlets>
+                  <frac32buffer name="out"/>
+               </outlets>
+               <displays/>
+               <params/>
+               <attribs/>
+               <includes/>
+               <code.declaration><![CDATA[class MetaGlue {
+public:
+	void declare(uint8_t interface, const char str1[], const char str2[]) {}
+	uint8_t metaInterface;
+};
+
+class UIGlue {
+public:
+	void openVerticalBox(uint8_t* ui_interface, const char str1[]);
+	void addHorizontalSlider(uint8_t* ui_interface, const char str1[], float* value, float init, float min, float max, float step);
+	void closeBox(uint8_t* ui_interface);
+
+	uint8_t* uiInterface;
+};
+
+float fmaxf (float a, float b) {
+	return a > b ? a : b;
+}
+float fminf (float a, float b) {
+	return a < b ? a : b;
+}
+float tanf(float x) {
+	return sinf(x) / cosf(x);
+}
+
+/* ------------------------------------------------------------
+name: "korg35LPF"
+Code generated with Faust 2.30.7 (https://faust.grame.fr)
+Compilation options: -lang c -es 1 -scal -ftz 0
+------------------------------------------------------------ */
+
+#ifndef  __mydsp_H__
+#define  __mydsp_H__
+
+#ifndef FAUSTFLOAT
+#define FAUSTFLOAT float
+#endif 
+
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+
+#ifndef FAUSTCLASS 
+#define FAUSTCLASS mydsp
+#endif
+#ifdef __APPLE__ 
+#define exp10f __exp10f
+#define exp10 __exp10
+#endif
+
+typedef struct {
+	int fSampleRate;
+	float fConst0;
+	FAUSTFLOAT fHslider0;
+	FAUSTFLOAT fHslider1;
+	float fRec1[2];
+	float fRec2[2];
+	float fRec3[2];
+} mydsp;
+
+mydsp* newmydsp() { 
+	mydsp* dsp = (mydsp*)calloc(1, sizeof(mydsp));
+	return dsp;
+}
+
+void deletemydsp(mydsp* dsp) { 
+	free(dsp);
+}
+
+void metadatamydsp(MetaGlue* m) { 
+	m->declare(m->metaInterface, "compile_options", "-lang c -es 1 -scal -ftz 0");
+	m->declare(m->metaInterface, "filename", "korg35LPF.dsp");
+	m->declare(m->metaInterface, "maths.lib/author", "GRAME");
+	m->declare(m->metaInterface, "maths.lib/copyright", "GRAME");
+	m->declare(m->metaInterface, "maths.lib/license", "LGPL with exception");
+	m->declare(m->metaInterface, "maths.lib/name", "Faust Math Library");
+	m->declare(m->metaInterface, "maths.lib/version", "2.3");
+	m->declare(m->metaInterface, "name", "korg35LPF");
+	m->declare(m->metaInterface, "platform.lib/name", "Generic Platform Library");
+	m->declare(m->metaInterface, "platform.lib/version", "0.1");
+	m->declare(m->metaInterface, "vaeffects.lib/korg35LPF:author", "Eric Tarr");
+	m->declare(m->metaInterface, "vaeffects.lib/korg35LPF:license", "MIT-style STK-4.3 license");
+	m->declare(m->metaInterface, "vaeffects.lib/name", "Faust Virtual Analog Filter Effect Library");
+	m->declare(m->metaInterface, "vaeffects.lib/version", "0.0");
+}
+
+int getSampleRatemydsp(mydsp* dsp) {
+	return dsp->fSampleRate;
+}
+
+int getNumInputsmydsp(mydsp* dsp) {
+	return 1;
+}
+int getNumOutputsmydsp(mydsp* dsp) {
+	return 1;
+}
+int getInputRatemydsp(mydsp* dsp, int channel) {
+	int rate;
+	switch ((channel)) {
+		case 0: {
+			rate = 1;
+			break;
+		}
+		default: {
+			rate = -1;
+			break;
+		}
+	}
+	return rate;
+}
+int getOutputRatemydsp(mydsp* dsp, int channel) {
+	int rate;
+	switch ((channel)) {
+		case 0: {
+			rate = 1;
+			break;
+		}
+		default: {
+			rate = -1;
+			break;
+		}
+	}
+	return rate;
+}
+
+void classInitmydsp(int sample_rate) {
+}
+
+void instanceResetUserInterfacemydsp(mydsp* dsp) {
+	dsp->fHslider0 = (FAUSTFLOAT)0.20000000000000001f;
+	dsp->fHslider1 = (FAUSTFLOAT)4.0f;
+}
+
+void instanceClearmydsp(mydsp* dsp) {
+	/* C99 loop */
+	{
+		int l0;
+		for (l0 = 0; (l0 < 2); l0 = (l0 + 1)) {
+			dsp->fRec1[l0] = 0.0f;
+		}
+	}
+	/* C99 loop */
+	{
+		int l1;
+		for (l1 = 0; (l1 < 2); l1 = (l1 + 1)) {
+			dsp->fRec2[l1] = 0.0f;
+		}
+	}
+	/* C99 loop */
+	{
+		int l2;
+		for (l2 = 0; (l2 < 2); l2 = (l2 + 1)) {
+			dsp->fRec3[l2] = 0.0f;
+		}
+	}
+}
+
+void instanceConstantsmydsp(mydsp* dsp, int sample_rate) {
+	dsp->fSampleRate = sample_rate;
+	dsp->fConst0 = (6.28318548f / fminf(192000.0f, fmaxf(1.0f, (float)dsp->fSampleRate)));
+}
+
+void instanceInitmydsp(mydsp* dsp, int sample_rate) {
+	instanceConstantsmydsp(dsp, sample_rate);
+	instanceResetUserInterfacemydsp(dsp);
+	instanceClearmydsp(dsp);
+}
+
+void initmydsp(mydsp* dsp, int sample_rate) {
+	classInitmydsp(sample_rate);
+	instanceInitmydsp(dsp, sample_rate);
+}
+
+void buildUserInterfacemydsp(mydsp* dsp, UIGlue* ui_interface) {
+	ui_interface->openVerticalBox(ui_interface->uiInterface, "korg35LPF");
+	ui_interface->addHorizontalSlider(ui_interface->uiInterface, "Q", &dsp->fHslider1, 4.0f, 0.100000001f, 10.0f, 0.00999999978f);
+	ui_interface->addHorizontalSlider(ui_interface->uiInterface, "freq", &dsp->fHslider0, 0.200000003f, 0.0f, 1.0f, 0.00100000005f);
+	ui_interface->closeBox(ui_interface->uiInterface);
+}
+
+void computemydsp(mydsp* dsp, int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
+	FAUSTFLOAT* input0 = inputs[0];
+	FAUSTFLOAT* output0 = outputs[0];
+	float fSlow0 = tanf(dsp->fConst0 * powf(10.0f, ((3.0f * (float)dsp->fHslider0) + 1.0f)));
+	float fSlow1 = (fSlow0 + 1.0f);
+	float fSlow2 = (fSlow0 / fSlow1);
+	float fSlow3 = ((float)dsp->fHslider1 + -0.707000017f);
+	float fSlow4 = (1.0f - fSlow2);
+	float fSlow5 = (1.0f / (1.0f - (0.215215757f * (((fSlow0 * fSlow3) * fSlow4) / fSlow1))));
+	float fSlow6 = (1.0f / fSlow1);
+	float fSlow7 = (0.215215757f * (fSlow3 * fSlow4));
+	float fSlow8 = (0.0f - fSlow6);
+	float fSlow9 = (2.0f * fSlow2);
+	float fSlow10 = (0.215215757f * fSlow3);
+	/* C99 loop */
+	{
+		int i;
+		for (i = 0; (i < count); i = (i + 1)) {
+			float fTemp0 = ((float)input0[i] - dsp->fRec3[1]);
+			float fTemp1 = ((fSlow5 * ((dsp->fRec3[1] + (fSlow6 * ((fSlow0 * fTemp0) + (fSlow7 * dsp->fRec1[1])))) + (fSlow8 * dsp->fRec2[1]))) - dsp->fRec1[1]);
+			float fTemp2 = (dsp->fRec1[1] + (fSlow2 * fTemp1));
+			float fRec0 = fTemp2;
+			dsp->fRec1[0] = (dsp->fRec1[1] + (fSlow9 * fTemp1));
+			dsp->fRec2[0] = (dsp->fRec2[1] + (fSlow9 * ((fSlow10 * fTemp2) - dsp->fRec2[1])));
+			dsp->fRec3[0] = (dsp->fRec3[1] + (fSlow9 * fTemp0));
+			output0[i] = (FAUSTFLOAT)fRec0;
+			dsp->fRec1[1] = dsp->fRec1[0];
+			dsp->fRec2[1] = dsp->fRec2[0];
+			dsp->fRec3[1] = dsp->fRec3[0];
+		}
+	}
+}
+
+#endif
+
+mydsp mdsp;]]></code.declaration>
+               <code.init><![CDATA[initmydsp(&mdsp, 48000.0);]]></code.init>
+               <code.dispose><![CDATA[//deletemydsp(mdsp);]]></code.dispose>
+               <code.krate><![CDATA[// Calculate audio
+float inf[BUFSIZE] = {};
+float outf[BUFSIZE] = {};
+
+
+// Convert audio to float
+for (uint8_t i = 0; i < BUFSIZE; i++) {
+	inf[i] = inlet_in[i] * (float) (1.0f / (1 << 27));
+}
+
+float* inp = (float*) &inf;
+float* outp = (float*) &outf;
+float** inpp = &inp;
+float** outpp = &outp;
+
+// Convert parameters
+mdsp.fHslider0 = fminf(1.0f, inlet_freq * (float) (1.0f / (1 << 27)));
+mdsp.fHslider1 = fminf(1.0f, inlet_res * (float) (1.0f / (1 << 27))) * 9.95;
+
+computemydsp(&mdsp, BUFSIZE, inpp, outpp);
+
+// Convert audio back
+for (uint8_t i = 0; i < BUFSIZE; i++) {
+	outlet_out[i] = (int) (outf[i] * (float) (1 << 27));
+}]]></code.krate>
+            </object>
+         </patchobj>
+         <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_1" x="868" y="798">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="fx/chorus" uuid="7fbeb91d-67e6-4314-b1f1-a00fecb69b96" name="obj_1" x="938" y="798">
+            <params>
+               <frac32.u.map name="depth" value="22.5"/>
+               <frac32.s.map name="speed" value="-49.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="env/adsr m" uuid="98bd39fb828c392b28126d259cb5175e6f6ea34b" name="adsr_1" x="700" y="812">
+            <params>
+               <frac32.s.map name="a" value="-64.0"/>
+               <frac32.s.map name="d" value="-48.0"/>
+               <frac32.u.map name="s" value="0.04999971389770508"/>
+               <frac32.s.map name="r" value="-50.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="gain/vca" uuid="a9f2dcd18043e2f47364e45cb8814f63c2a37c0d" name="vca_2" x="784" y="812">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="jaffa/mix/StMix2" uuid="e27295da-c2a0-40a6-88b7-259fbf37b043" name="StMix2_1" x="1064" y="812">
+            <params>
+               <frac32.u.map name="1 Gain" value="48.0"/>
+               <frac32.u.map name="2 Gain" value="48.0"/>
+            </params>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet a" uuid="abd8c5fd3b0524a6630f65cad6dc27f6c58e2a3e" name="L" x="1176" y="812">
+            <params/>
+            <attribs/>
+         </obj>
+         <obj type="patch/outlet a" uuid="abd8c5fd3b0524a6630f65cad6dc27f6c58e2a3e" name="R" x="1176" y="854">
+            <params/>
+            <attribs/>
+         </obj>
+         <nets>
+            <net>
+               <source obj="keyb_1" outlet="note"/>
+               <dest obj="supersaw_1" inlet="pitch"/>
+            </net>
+            <net>
+               <source obj="supersaw_1" outlet="wave"/>
+               <dest obj="korg35LPF" inlet="in"/>
+            </net>
+            <net>
+               <source obj="+_1" outlet="out"/>
+               <dest obj="korg35LPF" inlet="freq"/>
+            </net>
+            <net>
+               <source obj="*_1" outlet="result"/>
+               <dest obj="+_1" inlet="in2"/>
+            </net>
+            <net>
+               <source obj="adsr_1" outlet="env"/>
+               <dest obj="vca_2" inlet="v"/>
+            </net>
+            <net>
+               <source obj="vca_2" outlet="o"/>
+               <dest obj="vca_1" inlet="a"/>
+               <dest obj="StMix2_1" inlet="1L"/>
+               <dest obj="StMix2_1" inlet="1R"/>
+            </net>
+            <net>
+               <source obj="adsr_2" outlet="env"/>
+               <dest obj="*_1" inlet="a"/>
+            </net>
+            <net>
+               <source obj="StMix2_1" outlet="L Out"/>
+               <dest obj="L" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="StMix2_1" outlet="R Out"/>
+               <dest obj="R" inlet="outlet"/>
+            </net>
+            <net>
+               <source obj="shift down" outlet="out"/>
+               <dest obj="+_1" inlet="in1"/>
+            </net>
+            <net>
+               <source obj="resonance" outlet="inlet"/>
+               <dest obj="limit_1" inlet="in"/>
+            </net>
+            <net>
+               <source obj="flt dpt" outlet="inlet"/>
+               <dest obj="scale dpt" inlet="in"/>
+            </net>
+            <net>
+               <source obj="flt attack" outlet="inlet"/>
+               <dest obj="scale attack" inlet="in"/>
+            </net>
+            <net>
+               <source obj="flt decay" outlet="inlet"/>
+               <dest obj="adsr_2" inlet="d"/>
+            </net>
+            <net>
+               <source obj="attack" outlet="inlet"/>
+               <dest obj="adsr_1" inlet="a"/>
+            </net>
+            <net>
+               <source obj="decay" outlet="inlet"/>
+               <dest obj="adsr_1" inlet="d"/>
+            </net>
+            <net>
+               <source obj="sustain" outlet="inlet"/>
+               <dest obj="adsr_1" inlet="s"/>
+            </net>
+            <net>
+               <source obj="release" outlet="inlet"/>
+               <dest obj="scale release" inlet="in"/>
+            </net>
+            <net>
+               <source obj="chorus snd" outlet="inlet"/>
+               <dest obj="vca_1" inlet="v"/>
+            </net>
+            <net>
+               <source obj="cutoff" outlet="inlet"/>
+               <dest obj="scale cutoff" inlet="in"/>
+            </net>
+            <net>
+               <source obj="keyb_1" outlet="gate2"/>
+               <dest obj="adsr_1" inlet="gate"/>
+               <dest obj="adsr_2" inlet="gate"/>
+            </net>
+            <net>
+               <source obj="vca_1" outlet="o"/>
+               <dest obj="obj_1" inlet="in"/>
+            </net>
+            <net>
+               <source obj="obj_1" outlet="L"/>
+               <dest obj="StMix2_1" inlet="2L"/>
+            </net>
+            <net>
+               <source obj="obj_1" outlet="R"/>
+               <dest obj="StMix2_1" inlet="2R"/>
+            </net>
+            <net>
+               <source obj="scale dpt" outlet="out"/>
+               <dest obj="*_1" inlet="b"/>
+            </net>
+            <net>
+               <source obj="scale cutoff" outlet="out"/>
+               <dest obj="shift down" inlet="in"/>
+            </net>
+            <net>
+               <source obj="limit_1" outlet="out"/>
+               <dest obj="korg35LPF" inlet="res"/>
+            </net>
+            <net>
+               <source obj="korg35LPF" outlet="out"/>
+               <dest obj="vca_2" inlet="a"/>
+            </net>
+            <net>
+               <source obj="scale attack" outlet="out"/>
+               <dest obj="adsr_2" inlet="a"/>
+            </net>
+            <net>
+               <source obj="scale release" outlet="out"/>
+               <dest obj="adsr_1" inlet="r"/>
+            </net>
+         </nets>
+         <settings>
+            <subpatchmode>no</subpatchmode>
+         </settings>
+         <notes><![CDATA[]]></notes>
+         <windowPos>
+            <x>0</x>
+            <y>38</y>
+            <width>1512</width>
+            <height>944</height>
+         </windowPos>
+      </subpatch>
+   </patcher>
+   <obj type="audio/out stereo" uuid="a1ca7a567f535acc21055669829101d3ee7f0189" name="out LR" x="1036" y="588">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="jaffa/string/c2" uuid="204560dc-d001-446b-9f87-dd68f5ebffd2" name="text 9-10" x="14" y="658">
+      <params/>
+      <attribs>
+         <table attributeName="1" table="ENV REL"/>
+         <table attributeName="2" table="CHR SND"/>
+      </attribs>
+   </obj>
+   <nets>
+      <net>
+         <source obj="print table" outlet="o"/>
+         <dest obj="renderer_1" inlet="print"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="i"/>
+         <dest obj="text object settings" inlet="i"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="x"/>
+         <dest obj="text object settings" inlet="x"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="y"/>
+         <dest obj="text object settings" inlet="y"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="w"/>
+         <dest obj="text object settings" inlet="w"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="h"/>
+         <dest obj="text object settings" inlet="h"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="textid"/>
+         <dest obj="text object settings" inlet="textid"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="color"/>
+         <dest obj="text object settings" inlet="color"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="trig"/>
+         <dest obj="text object settings" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="rapid triggers" outlet="o"/>
+         <dest obj="text positions" inlet="in"/>
+         <dest obj="poti values -&gt; rect" inlet="trig in"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="i"/>
+         <dest obj="rectangle settings" inlet="i"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="x"/>
+         <dest obj="rectangle settings" inlet="x"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="y"/>
+         <dest obj="rectangle settings" inlet="y"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="w"/>
+         <dest obj="rectangle settings" inlet="w"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="h"/>
+         <dest obj="rectangle settings" inlet="h"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="trig"/>
+         <dest obj="rectangle settings" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="pot_1" outlet="outA"/>
+         <dest obj="poti values -&gt; rect" inlet="p0"/>
+         <dest obj="synth" inlet="cutoff"/>
+      </net>
+      <net>
+         <source obj="pot_1" outlet="outB"/>
+         <dest obj="poti values -&gt; rect" inlet="p1"/>
+         <dest obj="synth" inlet="resonance"/>
+      </net>
+      <net>
+         <source obj="pot_5" outlet="outB"/>
+         <dest obj="poti values -&gt; rect" inlet="p9"/>
+         <dest obj="synth" inlet="chorus snd"/>
+      </net>
+      <net>
+         <source obj="pot_5" outlet="outA"/>
+         <dest obj="poti values -&gt; rect" inlet="p8"/>
+         <dest obj="synth" inlet="release"/>
+      </net>
+      <net>
+         <source obj="pot_4" outlet="outB"/>
+         <dest obj="poti values -&gt; rect" inlet="p7"/>
+         <dest obj="synth" inlet="sustain"/>
+      </net>
+      <net>
+         <source obj="pot_4" outlet="outA"/>
+         <dest obj="poti values -&gt; rect" inlet="p6"/>
+         <dest obj="synth" inlet="decay"/>
+      </net>
+      <net>
+         <source obj="pot_3" outlet="outB"/>
+         <dest obj="poti values -&gt; rect" inlet="p5"/>
+         <dest obj="synth" inlet="attack"/>
+      </net>
+      <net>
+         <source obj="pot_3" outlet="outA"/>
+         <dest obj="poti values -&gt; rect" inlet="p4"/>
+         <dest obj="synth" inlet="flt decay"/>
+      </net>
+      <net>
+         <source obj="pot_2" outlet="outB"/>
+         <dest obj="poti values -&gt; rect" inlet="p3"/>
+         <dest obj="synth" inlet="flt attack"/>
+      </net>
+      <net>
+         <source obj="pot_2" outlet="outA"/>
+         <dest obj="poti values -&gt; rect" inlet="p2"/>
+         <dest obj="synth" inlet="flt dpt"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="color"/>
+         <dest obj="rectangle settings" inlet="color"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="type"/>
+         <dest obj="rectangle settings" inlet="type"/>
+      </net>
+      <net>
+         <source obj="synth" outlet="L"/>
+         <dest obj="out LR" inlet="left"/>
+      </net>
+      <net>
+         <source obj="synth" outlet="R"/>
+         <dest obj="out LR" inlet="right"/>
+      </net>
+      <net>
+         <source obj="c4_1" outlet="3"/>
+         <dest obj="text update" inlet="text2"/>
+      </net>
+      <net>
+         <source obj="c4_1" outlet="4"/>
+         <dest obj="text update" inlet="text3"/>
+      </net>
+      <net>
+         <source obj="c4_2" outlet="1"/>
+         <dest obj="text update" inlet="text4"/>
+      </net>
+      <net>
+         <source obj="c4_2" outlet="2"/>
+         <dest obj="text update" inlet="text5"/>
+      </net>
+      <net>
+         <source obj="c4_2" outlet="3"/>
+         <dest obj="text update" inlet="text6"/>
+      </net>
+      <net>
+         <source obj="c4_2" outlet="4"/>
+         <dest obj="text update" inlet="text7"/>
+      </net>
+      <net>
+         <source obj="text 9-10" outlet="1"/>
+         <dest obj="text update" inlet="text8"/>
+      </net>
+      <net>
+         <source obj="text 9-10" outlet="2"/>
+         <dest obj="text update" inlet="text9"/>
+      </net>
+      <net>
+         <source obj="c4_1" outlet="2"/>
+         <dest obj="text update" inlet="text1"/>
+      </net>
+      <net>
+         <source obj="c4_1" outlet="1"/>
+         <dest obj="text update" inlet="text0"/>
+      </net>
+      <net>
+         <source obj="poti values -&gt; rect" outlet="scale"/>
+         <dest obj="rectangle settings" inlet="scale"/>
+      </net>
+      <net>
+         <source obj="set FPS" outlet="wave"/>
+         <dest obj="rapid triggers" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="scale"/>
+         <dest obj="text object settings" inlet="scale"/>
+      </net>
+      <net>
+         <source obj="text positions" outlet="type"/>
+         <dest obj="text object settings" inlet="type"/>
+      </net>
+   </nets>
+   <settings>
+      <subpatchmode>no</subpatchmode>
+      <MidiChannel>1</MidiChannel>
+      <NPresets>8</NPresets>
+      <NPresetEntries>32</NPresetEntries>
+      <NModulationSources>8</NModulationSources>
+      <NModulationTargetsPerSource>8</NModulationTargetsPerSource>
+   </settings>
+   <notes><![CDATA[]]></notes>
+   <windowPos>
+      <x>235</x>
+      <y>312</y>
+      <width>1217</width>
+      <height>944</height>
+   </windowPos>
+</patch-1.0>
