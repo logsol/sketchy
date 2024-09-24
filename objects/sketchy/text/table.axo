@@ -1,0 +1,27 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900">
+      <sDescription>Allocate table in RAM memory for texts to be displayed on an OLED screen. They can be drawn to the screen using the sketchy/renderer and also have to be defined as sketchy/table/objects.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <helpPatch></helpPatch>
+      <inlets/>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <text name="init"/>
+         <spinner name="entries" description="Maximum amount of strings that fit in table" MinValue="1" MaxValue="1024" DefaultValue="32"/>
+         <spinner name="length" description="Maximum amount of characters in each string" MinValue="8" MaxValue="128" DefaultValue="32"/>
+      </attribs>
+      <code.declaration><![CDATA[static const uint32_t LENGTH = attr_entries;
+
+static const uint8_t STRING_LENGTH = attr_length;
+
+char array[LENGTH][STRING_LENGTH];
+
+bool dirty;]]></code.declaration>
+      <code.init><![CDATA[dirty = true;
+array[LENGTH][STRING_LENGTH] = {};
+attr_init;]]></code.init>
+   </obj.normal>
+</objdefs>

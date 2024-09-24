@@ -1,0 +1,53 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="update" uuid="01079a7f-2a03-4c0a-a34c-9a9be161f774">
+      <sDescription>Update 10 text slots in the text tables. First slot to be written to is defined by startid. Example: Set startid to 10 in order to update the 10 slots at indexes 10-19.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <inlets>
+         <int32.positive name="startid" description="Starting slot id. For example set startid to 10 in order to update the 10 table elements at indexes 10-19."/>
+         <charptr32 name="text0"/>
+         <charptr32 name="text1"/>
+         <charptr32 name="text2"/>
+         <charptr32 name="text3"/>
+         <charptr32 name="text4"/>
+         <charptr32 name="text5"/>
+         <charptr32 name="text6"/>
+         <charptr32 name="text7"/>
+         <charptr32 name="text8"/>
+         <charptr32 name="text9"/>
+      </inlets>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <objref name="table" description="reference to sketchy/text/table"/>
+      </attribs>
+      <code.declaration><![CDATA[bool init;
+
+void copy_into_table(int id, const char* str) {
+	
+	int str_length = strlen(str);
+
+	if (str_length == 0) {
+		return;
+	}
+	
+	int max = attr_table.STRING_LENGTH;
+	str_length = str_length > max ? max : str_length;
+	strcpy(attr_table.array[id], str);
+}]]></code.declaration>
+      <code.init><![CDATA[init = false;]]></code.init>
+      <code.krate><![CDATA[int id = inlet_startid;
+
+copy_into_table(id++, inlet_text0);
+copy_into_table(id++, inlet_text1);
+copy_into_table(id++, inlet_text2);
+copy_into_table(id++, inlet_text3);
+copy_into_table(id++, inlet_text4);
+copy_into_table(id++, inlet_text5);
+copy_into_table(id++, inlet_text6);
+copy_into_table(id++, inlet_text7);
+copy_into_table(id++, inlet_text8);
+copy_into_table(id++, inlet_text9);]]></code.krate>
+   </obj.normal>
+</objdefs>

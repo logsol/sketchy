@@ -1,0 +1,65 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="update" uuid="1a841356-5eca-48ed-a884-c642da9e205b">
+      <sDescription>Configure an object inside a sketchy/object/table at index i. Note that if you want to render some text you will also need to configure a sketchy/text/table. You can use this object to draw rectangles, lines and text in different variations on an oled screen. 
+
+Object types:
+0: invisible
+1: rectangle
+2: filled rectangle
+3: rectangle with 2px rounded edges
+4: filled rectangle with 2px rounded edges
+5: line (connects consecutive line obiects)
+6: text (top-left aligned)
+7: text (x centered)
+8: text (y centered)
+9: text (x+y centered)
+
+Color:
+0: bright pixel
+1: dark pixel
+2: invert pixel</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <helpPatch>table.axh</helpPatch>
+      <inlets>
+         <int32.positive name="i"/>
+         <int32.positive name="type"/>
+         <int32.positive name="x"/>
+         <int32.positive name="y"/>
+         <int32 name="w"/>
+         <int32 name="h"/>
+         <int32.positive name="textid"/>
+         <int32.positive name="color"/>
+         <int32.positive name="scale"/>
+         <bool32.rising name="trig"/>
+      </inlets>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <objref name="table"/>
+      </attribs>
+      <code.declaration><![CDATA[bool ptrig;]]></code.declaration>
+      <code.init><![CDATA[ptrig = false;]]></code.init>
+      <code.krate><![CDATA[if (inlet_trig && !ptrig) {
+	ptrig = true;
+	if (inlet_i < attr_table.LENGTH) {
+		attr_table.array[inlet_i][attr_table.FIELD_TYPE] = (int16_t) inlet_type;
+		attr_table.array[inlet_i][attr_table.FIELD_X] = (int16_t) inlet_x;
+		attr_table.array[inlet_i][attr_table.FIELD_Y] = (int16_t) inlet_y;
+		attr_table.array[inlet_i][attr_table.FIELD_W] = (int16_t) inlet_w;
+		attr_table.array[inlet_i][attr_table.FIELD_H] = (int16_t) inlet_h;
+		attr_table.array[inlet_i][attr_table.FIELD_COLOR] = (int16_t) inlet_color;
+		attr_table.array[inlet_i][attr_table.FIELD_SCALE] = (int16_t) inlet_scale;
+		attr_table.array[inlet_i][attr_table.FIELD_TEXT_ID] = (int16_t) inlet_textid;
+		attr_table.dirty = true;
+	} else {
+		LogTextMessage("Display object table too small to render i=%d. Increase display object table size above %d.", inlet_i, attr_table.LENGTH);
+	}
+}
+
+if (!inlet_trig) {
+	ptrig = false;
+}]]></code.krate>
+   </obj.normal>
+</objdefs>

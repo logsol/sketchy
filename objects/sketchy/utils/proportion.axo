@@ -1,0 +1,18 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="proportion" uuid="77698382-a3ea-4b66-9918-074c7a46ec54">
+      <sDescription>Scale an incoming integer value in proportion to the second fractional input.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <inlets>
+         <int32.bipolar name="value" description="integer to be scaled proportionally"/>
+         <frac32.bipolar name="proportion" description="proportion that the integer value will be scaled by"/>
+      </inlets>
+      <outlets>
+         <int32.positive name="out"/>
+      </outlets>
+      <displays/>
+      <params/>
+      <attribs/>
+      <code.krate><![CDATA[outlet_out = ((int64_t) inlet_value * (inlet_proportion) + (1 << 26)) >> 27;]]></code.krate>
+   </obj.normal>
+</objdefs>

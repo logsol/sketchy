@@ -1,0 +1,60 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="rapid_triggers" uuid="f0875364-e95e-442b-b597-869f3414ff2f">
+      <sDescription>Rapidly trigger a predefined number of times.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <helpPatch>logic.axh</helpPatch>
+      <inlets>
+         <bool32.rising name="trig" description="start rapidly triggering"/>
+      </inlets>
+      <outlets>
+         <bool32.pulse name="o" description="repetitive pulse"/>
+         <int32.positive name="count" description="current output trigger count"/>
+      </outlets>
+      <displays/>
+      <params/>
+      <attribs>
+         <spinner name="count" MinValue="1" MaxValue="256" DefaultValue="10"/>
+      </attribs>
+      <code.declaration><![CDATA[// local data
+int trigger_count;
+int current_count;
+int prev_trig;
+int output_state;]]></code.declaration>
+      <code.init><![CDATA[// init code
+trigger_count = 0;
+current_count = 0;
+prev_trig = 0;
+output_state = 0;]]></code.init>
+      <code.krate><![CDATA[// k-rate code
+if (inlet_trig > 0 && !prev_trig) {
+    // Rising edge of trigger detected
+    trigger_count = attr_count;
+    current_count = 0;
+}
+
+if (trigger_count > 0) {
+    if (output_state == 0) {
+        // Rising edge of output trigger
+        outlet_o = 1 << 27;  // Set output high
+        output_state = 1;
+    } else {
+        // Falling edge of output trigger
+        outlet_o = 0;  // Set output low
+        output_state = 0;
+        
+        current_count++;
+        if (current_count >= trigger_count) {
+            trigger_count = 0;
+            current_count = 0;
+        }
+    }
+} else {
+    outlet_o = 0;  // Ensure output is low when not triggering
+    output_state = 0;
+}
+
+prev_trig = inlet_trig > 0;
+outlet_count = current_count;]]></code.krate>
+   </obj.normal>
+</objdefs>

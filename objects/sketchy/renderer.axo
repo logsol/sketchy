@@ -1,0 +1,578 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63">
+      <sDescription>The renderer object continuously renders visual objects to a connected SSD1306/1106 OLED display. Objects and texts must be defined and configured in the respective tables. Please use the sketchy objects to initialize and configure all elements. Refer to help patches to see this in action.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <inlets>
+         <bool32.rising name="print" description="Will log the state of the object table to axoloti window"/>
+      </inlets>
+      <outlets>
+         <int32.positive name="sw" description="screen width"/>
+         <int32.positive name="sh" description="screen height"/>
+      </outlets>
+      <displays/>
+      <params/>
+      <attribs>
+         <combo name="type">
+            <MenuEntries>
+               <string>SSD1306</string>
+               <string>SH1106</string>
+            </MenuEntries>
+            <CEntries>
+               <string>1306</string>
+               <string>1106</string>
+            </CEntries>
+         </combo>
+         <combo name="I2CADDR">
+            <MenuEntries>
+               <string>0x3C</string>
+               <string>0x3D</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0x3C</string>
+               <string>0x3D</string>
+            </CEntries>
+         </combo>
+         <objref name="table"/>
+         <objref name="text"/>
+      </attribs>
+      <depends>
+         <depend>SD1</depend>
+         <depend>SPID1</depend>
+         <depend>I2CD1</depend>
+      </depends>
+      <code.declaration><![CDATA[#include "./font5x8_offset.h"
+
+enum SSD1306 {
+	LCDWIDTH            = 128,
+	LCDHEIGHT           = 64,
+	SETCONTRAST         = 0x81, // 2byte cmd, 256 contrast steps, reset = 7F
+	DISPLAYON           = 0xAF, // entire display on
+	DISPLAYOFF          = 0xAE, // entire display off
+	DISPLAYALLON_RESUME = 0xA4,
+	NORMALDISPLAY       = 0xA6, // invert = 0xA7
+	DEACTIVATE_SCROLL   = 0x2E, // stop control scroll conf by 26 27 29 2A
+	MEMORYMODE          = 0x20, // 2byte cmd, 0 horizontal, 1 vertical, 2 page addressing, 3 invalid
+	COLUMNADDR          = 0x21, // 3bytes, start, end (included) valid in horizontal or vertical mode
+	PAGEADDR            = 0x22, // 3bytes, start, end (included) valid in horizontal or vertical mode
+	SETSTARTLINE_0      = 0x40, // set display RAM start line at 0
+	SEGREMAP            = 0xA0, // segment remap 0 mapped to SEG0
+	SETMULTIPLEX        = 0xA8, // 2 byte cmd, set mux ratio 
+	COMSCANDEC          = 0xC8, // scan from COM[N-1] to COM[0] (0xC0 is COM0 to COM[N-1])
+	SETDISPLAYOFFSET    = 0xD3, // 2 byte cmd, vertical shift
+	SETCOMPINS          = 0xDA, // 2 byte cmd, seq com pin conf, left right remap
+	SETDISPLAYCLOCKDIV  = 0xD5, // 2 byte cmd, low nibble A[3:0]+1 = div ratio, high nibble A[7:4] freq, reset 1000b
+	SETPRECHARGE        = 0xD9, // 2 byte cmd, precharge period A[3:0] phase1 A[7:4] phase2, reset:2
+	SETVCOMDETECT       = 0xDB, // 2 byte Vcomh deselect level A[6:4] 000b 0.65xVcc 010b 0.77(reset) 011b 0.83
+	CHARGEPUMP          = 0x8D, // Enable charge pump seq: 0x8D, 0x14, 0xAF (Charge pump setting, enable charge pump, display on)
+	EXTERNALVCC         = 0x1,
+	SWITCHCAPVCC        = 0x2,
+};
+
+uint8_t pixels[8][LCDWIDTH];
+uint8_t cpt = 0;
+uint8_t *txbuf;
+uint8_t *rxbuf;
+
+// SETUP
+// ------------------
+void cmd(uint8_t c) {
+	txbuf[0] = 0;
+	txbuf[1] = c;
+	i2cMasterTransmitTimeout(
+		&I2CD1, attr_I2CADDR, txbuf, 2, rxbuf, 0, 30
+	);
+}
+
+// _____________________________________________________________________
+
+int wrap_index(int i, int i_max) {
+	return ((i % i_max) + i_max) % i_max;
+}
+
+void clear() {
+	for (int page = 0; page < 8; page++) {
+		for (int i = 0; i < LCDWIDTH; i++) {
+			pixels[page][i] = 0;
+		}
+	}
+}
+
+// _____________________________________________________________________
+void sendPage(int page) {
+	cmd(COLUMNADDR); cmd(0); cmd(127); // Column start end
+	cmd(PAGEADDR); cmd(page); cmd(page); // Page start end
+
+	if (attr_type == 1106) {
+		cmd(0xB0 + page); //set page address
+		cmd(2 & 0xf); //set lower column address
+		cmd(0x10 | (2 >> 4)); //set higher column address
+	}
+
+	txbuf[0] = 0x40;
+	memcpy(txbuf + 1, pixels[page], LCDWIDTH); // Directly copy the pixel data
+	i2cMasterTransmitTimeout(&I2CD1, attr_I2CADDR, txbuf, 129, rxbuf, 0, 30);
+}
+
+// _____________________________________________________________________
+void init() {
+	// Init sequence
+	cmd(DISPLAYOFF);
+
+	// 2 byte cmd, low nibble A[3:0]+1 = div ratio, high nibble A[7:4] freq, reset 1000b 
+	cmd(SETDISPLAYCLOCKDIV); cmd(0x80);
+	cmd(SETMULTIPLEX); cmd(LCDHEIGHT - 1);
+	cmd(SETDISPLAYOFFSET); cmd(attr_type == 1306 ? 0x00 : 0x01);
+	cmd(SETSTARTLINE_0);
+	cmd(CHARGEPUMP); cmd(0x14);
+	cmd(MEMORYMODE); cmd(0x00);
+	cmd(SEGREMAP | 0x1);
+	cmd(COMSCANDEC);
+	// 128 x 64
+	cmd(SETCOMPINS); cmd(0x12);
+	cmd(SETCONTRAST); cmd(0xCF);
+	cmd(SETPRECHARGE); cmd(0xF1);
+	cmd(SETVCOMDETECT); cmd(0x40);
+	cmd(DISPLAYALLON_RESUME);
+	cmd(NORMALDISPLAY);
+	cmd(DEACTIVATE_SCROLL);
+	cmd(DISPLAYON);
+}
+
+// _____________________________________________________________________
+void setup() {
+	static uint8_t _txbuf[129] __attribute__ ((section (".sram2")));
+	static uint8_t _rxbuf[8] __attribute__ ((section (".sram2")));
+	txbuf = _txbuf;
+	rxbuf = _rxbuf;
+	init();
+}
+
+msg_t ThreadX2() {
+	setup();
+
+	while (!chThdShouldTerminate()) {
+		clear();
+		render();
+		uint8_t i; 
+		for (i = 0; i < 8; i++) {
+			sendPage(i);
+		}
+		chThdSleepMilliseconds(32);
+	}
+
+	chThdExit((msg_t)0);
+}
+
+static msg_t ThreadX(void *arg) {
+	((attr_parent *)arg)->ThreadX2();
+}
+
+/* 128 is not enough, try 192 <-- */
+WORKING_AREA(waThreadX, 1024);
+Thread *Thd;
+
+// --------------------------- Graphics ----------------------------------
+
+uint16_t fps_limit_counter;
+bool pprint;
+bool prender;
+
+void draw_pixel(int16_t x, int16_t y, uint8_t color) {
+	uint8_t page, bit;
+
+	if (x < 0 || y < 0 || x >= LCDWIDTH || y >= LCDHEIGHT - 1) {
+		return;
+	}
+
+	page = y / 8;
+	bit = 0x01;
+	bit <<= (y % 8);
+
+	if (color == 0) { 
+		// BRIGHT
+		pixels[page][x] |= bit;
+	} else if (color == 1) { 
+		// DARK
+		pixels[page][x] &= ~bit;
+	} else if (color == 2) { 
+		// INVERT
+		pixels[page][x] ^= bit;
+	}
+}
+
+void draw_scaled_pixel(int16_t x, int16_t y, uint8_t color, uint8_t scale = 1) {
+	if (scale == 0) {
+		scale = 1;
+	}
+
+	for (int i = 0; i < scale; i++) {
+		for (int j = 0; j < scale; j++) {
+			int16_t scaled_x = x * scale + i;
+			int16_t scaled_y = y * scale + j;
+			draw_pixel(scaled_x, scaled_y, color);
+		}
+	}
+}
+
+#ifndef _swap_int16_t
+#define _swap_int16_t(a, b)                                                    \
+	{                                                                            \
+		int16_t t = a;                                                             \
+		a = b;                                                                     \
+		b = t;                                                                     \
+	}
+#endif
+
+/**************************************************************************/
+/**
+ * Bresenham algorithm from Adafruit GFX
+ * https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp#L132
+ */
+void draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color, uint8_t scale = 1) {
+
+	int16_t steep = abs(y1 - y0) > abs(x1 - x0);
+	if (steep) {    
+		_swap_int16_t(x0, y0);
+		_swap_int16_t(x1, y1);
+	}
+
+	if (x0 > x1) {
+		_swap_int16_t(x0, x1);
+		_swap_int16_t(y0, y1);
+	}
+
+	int16_t dx, dy;
+	dx = x1 - x0;
+	dy = abs(y1 - y0);
+
+	int16_t err = dx / 2;
+	int16_t ystep;
+
+	if (y0 < y1) {
+		ystep = 1;
+	} else {
+		ystep = -1;
+	}
+
+	for (; x0 <= x1; x0++) {
+		if (steep) {
+			draw_scaled_pixel(y0, x0, color, scale);
+		} else {
+			draw_scaled_pixel(x0, y0, color, scale);
+		}
+		err -= dy;
+		if (err < 0) {
+			y0 += ystep;
+			err += dx;
+		}
+	}
+}
+
+void draw_string_from_index(int text_id, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, bool center, bool center_v = false, uint8_t scale = 1) {
+    const char* str = attr_text.array[text_id];
+    int16_t char_width = 5;  // Actual character width
+    int16_t char_spacing = 1; // Spacing after each character
+    int16_t total_char_width = char_width + char_spacing;
+    int16_t char_height = 8; // Assuming 8px height based on font5x8_offset
+    size_t max_length = attr_text.STRING_LENGTH;
+
+    // First pass: Calculate total height (only if vertical centering is requested)
+    int total_lines = 0;
+    if (center_v) {
+        size_t i = 0;
+        while (i < max_length && str[i] != '\0') {
+            int line_width = 0;
+            size_t last_space = (size_t)-1;
+            while (i < max_length && str[i] != '\0' && str[i] != '\n') {
+                if (str[i] == ' ') {
+                    last_space = i;
+                }
+                if (line_width + total_char_width > w) {
+                    if (last_space != (size_t)-1) {
+                        i = last_space + 1;
+                        break;
+                    }
+                }
+                line_width += total_char_width;
+                i++;
+            }
+            total_lines++;
+            if (i < max_length && str[i] == '\n') i++;
+        }
+    }
+
+    int16_t total_height = total_lines * char_height;
+    int16_t start_y;
+    if (center_v) {
+        start_y = y + (h - total_height) / 2;
+        start_y = (start_y < y) ? y : start_y;
+    } else {
+        start_y = y;
+    }
+
+    // Second pass: Render text
+    size_t i = 0;
+    int16_t current_y = start_y;
+
+    while (i < max_length && str[i] != '\0' && current_y + char_height <= y + h) {
+        size_t line_start = i;
+        int16_t line_width = 0;
+        size_t last_space = (size_t)-1;
+        
+        // Measure the width of the line and find last space for word wrapping
+        while (i < max_length && str[i] != '\0' && str[i] != '\n') {
+            if (str[i] == ' ') {
+                last_space = i;
+            }
+            if (line_width + total_char_width > w) {
+                if (last_space != (size_t)-1) {
+                    // Word wrap
+                    i = last_space;
+                    line_width = (int16_t)(i - line_start) * total_char_width;
+                }
+                break;
+            }
+            line_width += total_char_width;
+            i++;
+        }
+        
+        // Trim trailing spaces
+        while (i > line_start && str[i - 1] == ' ') {
+            i--;
+            line_width -= total_char_width;
+        }
+
+        // Calculate centering offset, considering the extra pixel after each character
+        int16_t x_offset = center ? (w - (line_width - char_spacing)) / 2 : 0;
+        
+        // Render the line
+        for (size_t j = line_start; j < i && j < max_length; j++) {
+            int16_t current_x = x + x_offset + (int16_t)(j - line_start) * total_char_width;
+            
+            // Ensure we don't render outside the boundaries
+            if (current_x + char_width <= x + w && current_y + char_height <= y + h) {
+                draw_char_clipped(str[j], current_x, current_y, 0, 0, char_width, char_height, color, scale);
+            }
+        }
+
+        current_y += char_height;
+        if (i < max_length && (str[i] == '\n' || str[i] == ' ')) i++; // Move past newline or space character
+    }
+}
+
+// Helper function to draw a character with clipping (unchanged)
+void draw_char_clipped(char c, int16_t x, int16_t y, int16_t clip_x, int16_t clip_y, int16_t clip_w, int16_t clip_h, uint8_t color, uint8_t scale = 1) {
+	if (c < 32 || c > 127) {
+		return; // Skip non-printable characters
+	}
+
+	int index = (c - 32) * 5;
+
+	for (int col = clip_x; col < clip_x + clip_w && col < 5; col++) {
+		uint8_t column_data = font5x8_offset[index + col];
+
+		for (int row = clip_y; row < clip_y + clip_h && row < 8; row++) {
+			if (column_data & (1 << row)) {
+				draw_scaled_pixel(x + col - clip_x, y + row - clip_y, color, scale);
+			}
+		}
+	}
+}
+
+void draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+	if (w == 0 || h == 0) return;  // Don't draw if width or height is zero
+
+	int16_t x_end = x + w - (w > 0 ? 1 : -1);
+	int16_t y_end = y + h - (h > 0 ? 1 : -1);
+
+	draw_line(x, y, x_end, y, color, scale);     // Top line
+	if (h != 1 && h != -1) {
+		draw_line(x, y_end, x_end, y_end, color, scale);  // Bottom line
+	}
+	if (w != 1 && w != -1) {
+		draw_line(x, y, x, y_end, color, scale);     // Left line
+		draw_line(x_end, y, x_end, y_end, color, scale);  // Right line
+	}
+}
+
+void draw_filled_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+	if (w == 0 || h == 0) return;  // Don't draw if width or height is zero
+
+	int16_t x_start = (w > 0) ? x : x + w + 1;
+	int16_t x_end = (w > 0) ? x + w : x + 1;
+	int16_t y_start = (h > 0) ? y : y + h + 1;
+	int16_t y_end = (h > 0) ? y + h : y + 1;
+
+	for (int16_t i = x_start; i != x_end; i += (w > 0 ? 1 : -1)) {
+		draw_line(i, y_start, i, y_end - 1, color, scale);
+	}
+}
+
+void draw_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+	if (abs(w) < 5 || abs(h) < 5) {
+		draw_rect(x, y, w, h, color, scale);
+		return;
+	}
+
+	int16_t x_end = x + w - (w > 0 ? 1 : -1);
+	int16_t y_end = y + h - (h > 0 ? 1 : -1);
+
+	draw_line(x + 2, y, x_end - 2, y, color, scale);          // Top
+	draw_line(x + 2, y_end, x_end - 2, y_end, color, scale);  // Bottom
+	draw_line(x, y + 2, x, y_end - 2, color, scale);          // Left
+	draw_line(x_end, y + 2, x_end, y_end - 2, color, scale);  // Right
+
+	// Corners
+	draw_scaled_pixel(x + 1, y + 1, color, scale);
+	draw_scaled_pixel(x_end - 1, y + 1, color, scale);
+	draw_scaled_pixel(x + 1, y_end - 1, color, scale);
+	draw_scaled_pixel(x_end - 1, y_end - 1, color, scale);
+}
+
+void draw_filled_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+	if (abs(w) < 5 || abs(h) < 5) {
+		draw_filled_rect(x, y, w, h, color, scale);
+		return;
+	}
+
+	int16_t x_start = (w > 0) ? x : x + w + 1;
+	int16_t x_end = (w > 0) ? x + w : x + 1;
+	int16_t y_start = (h > 0) ? y : y + h + 1;
+	int16_t y_end = (h > 0) ? y + h : y + 1;
+
+	for (int16_t i = x_start; i != x_end; i += (w > 0 ? 1 : -1)) {
+		int16_t start_y = y_start;
+		int16_t end_y = y_end - 1;
+
+		if (i == x_start || i == x_end - (w > 0 ? 1 : -1)) {
+			start_y += 2;
+			end_y -= 2;
+		} else if (i == x_start + (w > 0 ? 1 : -1) || i == x_end - (w > 0 ? 2 : -2)) {
+			start_y += 1;
+			end_y -= 1;
+		}
+
+		draw_line(i, start_y, i, end_y, color, scale);
+	}
+}
+
+void render() {
+	for (uint8_t i = 0; i < attr_table.LENGTH; i++) {
+		if (attr_table.array[i][attr_table.FIELD_TYPE] == attr_table.TYPE_INVISIBLE) {
+			continue;
+		}
+		
+		int16_t x = attr_table.array[i][attr_table.FIELD_X];
+		int16_t y = attr_table.array[i][attr_table.FIELD_Y];
+		int16_t w = attr_table.array[i][attr_table.FIELD_W];
+		int16_t h = attr_table.array[i][attr_table.FIELD_H];
+		uint8_t color = attr_table.array[i][attr_table.FIELD_COLOR];
+		uint8_t scale = attr_table.array[i][attr_table.FIELD_SCALE];
+
+		switch (attr_table.array[i][attr_table.FIELD_TYPE]) {
+			case attr_table.TYPE_RECT:
+				draw_rect(x, y, w, h, color, scale);
+				break;
+
+			case attr_table.TYPE_FILLED_RECT:
+				draw_filled_rect(x, y, w, h, color, scale);
+				break;
+
+			case attr_table.TYPE_ROUNDED_RECT:
+				draw_rounded_rect(x, y, w, h, color, scale);
+				break;
+
+			case attr_table.TYPE_FILLED_ROUNDED_RECT:
+				draw_filled_rounded_rect(x, y, w, h, color, scale);
+				break;
+
+			case attr_table.TYPE_LINE:
+				if (i > 0 && attr_table.array[i - 1][attr_table.FIELD_TYPE] == attr_table.TYPE_LINE) {
+					int16_t prev_x = attr_table.array[i - 1][attr_table.FIELD_X];
+					int16_t prev_y = attr_table.array[i - 1][attr_table.FIELD_Y];
+					draw_line(prev_x, prev_y, x, y, color, scale);
+				}
+				break;
+
+			case attr_table.TYPE_TEXT:
+				draw_string_from_index(
+					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					x, y, w, h, color, false, false, scale
+				);
+				break;
+
+			case attr_table.TYPE_TEXT_CENTER_X:
+				draw_string_from_index(
+					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					x, y, w, h, color, true, false, scale
+				);
+				break;
+
+			case attr_table.TYPE_TEXT_CENTER_Y:
+				draw_string_from_index(
+					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					x, y, w, h, color, false, true, scale
+				);
+				break;
+
+			case attr_table.TYPE_TEXT_CENTER_BOTH:
+				draw_string_from_index(
+					attr_table.array[i][attr_table.FIELD_TEXT_ID], 
+					x, y, w, h, color, true, true, scale
+				);
+				break;
+		}
+	}
+
+	attr_table.dirty = false;
+}]]></code.declaration>
+      <code.init><![CDATA[// setup the pins
+palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(4)|PAL_STM32_PUDR_PULLUP|PAL_STM32_OTYPE_OPENDRAIN);// SCL
+palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(4)|PAL_STM32_PUDR_PULLUP|PAL_STM32_OTYPE_OPENDRAIN);// SDA
+static const I2CConfig i2cfg = {
+    OPMODE_I2C,
+    400000,
+    FAST_DUTY_CYCLE_2,
+};
+i2cStart(&I2CD1, &i2cfg);
+Thd = chThdCreateStatic(waThreadX, sizeof(waThreadX), NORMALPRIO, ThreadX, (void *)this);
+
+for (uint8_t page = 0; page < 8; page++) {
+  for (uint8_t i = 0; i < 128; i++) {
+    pixels[page][i] = 0b00000000;
+  }
+}
+
+pprint = false;]]></code.init>
+      <code.dispose><![CDATA[chThdTerminate( Thd );
+chThdWait( Thd );
+i2cStop(&I2CD1);
+palSetPadMode(GPIOB, 8, PAL_MODE_INPUT_ANALOG);
+palSetPadMode(GPIOB, 9, PAL_MODE_INPUT_ANALOG);]]></code.dispose>
+      <code.krate><![CDATA[if (inlet_print && !pprint) {
+  pprint = true;
+  for (uint8_t i = 0; i < attr_table.LENGTH; i++) {
+    LogTextMessage(
+      "i: %3d, type: %3d, x: %3d, y: %3d, w: %3d, h: %3d, color: %3d, text_id: %3d",
+      i,
+      attr_table.array[i][attr_table.FIELD_TYPE],
+      attr_table.array[i][attr_table.FIELD_X], 
+      attr_table.array[i][attr_table.FIELD_Y], 
+      attr_table.array[i][attr_table.FIELD_W],
+      attr_table.array[i][attr_table.FIELD_H], 
+      attr_table.array[i][attr_table.FIELD_COLOR],
+      attr_table.array[i][attr_table.FIELD_TEXT_ID]
+    );
+  }
+  LogTextMessage("");
+}
+
+if (!inlet_print && pprint) {
+  pprint = false;
+}
+
+outlet_sw = LCDWIDTH;
+outlet_sh = LCDHEIGHT;]]></code.krate>
+   </obj.normal>
+</objdefs>
