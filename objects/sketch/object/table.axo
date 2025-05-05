@@ -1,9 +1,11 @@
 <objdefs appVersion="1.0.12">
-   <obj.normal id="table" uuid="33169757-5339-4296-a6fd-66cca7728ce9">
+   <obj.normal id="table" uuid="9a9c184e-ff49-4cb1-996f-7cd503b4292d">
       <sDescription>Allocate table in RAM memory for visual objects. These objects can be drawn to a OLED screen using the sketchy/renderer.</sDescription>
       <author>Karlo Sono</author>
       <license>MIT</license>
-      <inlets/>
+      <inlets>
+         <bool32 name="print"/>
+      </inlets>
       <outlets/>
       <displays/>
       <params/>
@@ -36,19 +38,46 @@ static const uint8_t FIELD_H = 4;
 static const uint8_t FIELD_COLOR = 5;
 static const uint8_t FIELD_SCALE = 6;
 static const uint8_t FIELD_TEXT_ID = 7;
-static const uint8_t NUM_FIELDS = 8;
+static const uint8_t FIELD_PAGE = 8;
+static const uint8_t NUM_FIELDS = 9;
 
-int16_t array[LENGTH][NUM_FIELDS];
-bool dirty;]]></code.declaration>
+int16_t (*array)[NUM_FIELDS];
+bool pprint = false;
+bool dirty;
+uint16_t next_free_slot;
+
+uint16_t registerEntry() {
+    if (next_free_slot >= LENGTH) {
+        LogTextMessage("WARNING: object table is full! Reusing last available slot!");
+        return LENGTH - 1;  
+    }
+
+    uint32_t slot = next_free_slot;
+    next_free_slot++;
+    return slot;
+}]]></code.declaration>
       <code.init><![CDATA[dirty = true;
-array[LENGTH][NUM_FIELDS] = {};
+next_free_slot = 0;
 
-for (uint16_t i = 0; i < LENGTH; i++) {
-	for (uint16_t j = 0; j < NUM_FIELDS; j++) {
-		array[i][j] = 0;
+static int16_t _array[LENGTH][NUM_FIELDS] __attribute__ ((section (".sdram")));
+array = _array;
+
+memset(_array, 0, sizeof(_array));
+
+attr_init;]]></code.init>
+      <code.krate><![CDATA[if (!pprint && inlet_print) {
+	for (uint16_t i = 0; i < next_free_slot; i++) {
+		LogTextMessage("object[%d] page: %d, type: %d, x: %d, y: %d, w: %d, h: %d", 
+			i, 
+			array[i][FIELD_PAGE], 
+			array[i][FIELD_TYPE], 
+			array[i][FIELD_X], 
+			array[i][FIELD_Y],
+			array[i][FIELD_W],
+			array[i][FIELD_H]);
 	}
 }
 
-attr_init;]]></code.init>
+pprint = inlet_print;]]></code.krate>
    </obj.normal>
 </objdefs>

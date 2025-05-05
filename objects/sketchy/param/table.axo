@@ -1,0 +1,45 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="table" uuid="47e52247-c592-4737-85f0-72a0009d0e41">
+      <sDescription>Allocate table in RAM memory for visual objects. These objects can be drawn to a OLED screen using the sketchy/renderer.</sDescription>
+      <author>Karlo Sono</author>
+      <license>MIT</license>
+      <inlets>
+         <bool32 name="print"/>
+      </inlets>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <text name="init" description="Edit to pre-define some objects when patch starts"/>
+         <spinner name="pages" description="Number of pages" MinValue="1" MaxValue="128" DefaultValue="8"/>
+         <spinner name="params" description="Number of parameters per page" MinValue="1" MaxValue="128" DefaultValue="128"/>
+      </attribs>
+      <code.declaration><![CDATA[static const uint32_t NUM_PAGES = attr_pages;    // First dimension
+static const uint32_t NUM_PARAMS = attr_params;  // Second dimension
+static const uint32_t BITS = 32;
+static const uint32_t GAIN = 0;
+
+// 2D array with distinct dimensions
+//int32_t array[NUM_PAGES][NUM_PARAMS];
+int32_t (*array)[NUM_PARAMS];
+
+bool pprint = false;
+bool is_ready = false;]]></code.declaration>
+      <code.init><![CDATA[static int32_t _array[NUM_PAGES][NUM_PARAMS] __attribute__ ((section (".sdram")));
+array = _array;
+
+// Initialize all params with 0 on startup
+memset(array, 0, NUM_PAGES * NUM_PARAMS * sizeof(array[0][0]));
+
+attr_init;]]></code.init>
+      <code.krate><![CDATA[if (!pprint && inlet_print) {
+	for (uint16_t page = 0; page < NUM_PAGES; page++) {
+		for (uint16_t param = 0; param < NUM_PARAMS; param++) {
+			LogTextMessage("page[%d] param[%d] = %.2f", page, param, array[page][param]/(float)0x00200000);
+		}
+	}
+}
+
+pprint = inlet_print;]]></code.krate>
+   </obj.normal>
+</objdefs>

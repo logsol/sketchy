@@ -1,0 +1,55 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="dial" uuid="66fa6108-c60c-4a13-80cb-092515de51f7">
+      <license>GPL</license>
+      <inlets/>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <spinner name="page" MinValue="-127" MaxValue="127" DefaultValue="0"/>
+         <spinner name="param" MinValue="0" MaxValue="127" DefaultValue="0"/>
+         <combo name="polarity">
+            <MenuEntries>
+               <string>Unipolar</string>
+               <string>Bipolar</string>
+            </MenuEntries>
+            <CEntries>
+               <string>false</string>
+               <string>true</string>
+            </CEntries>
+         </combo>
+         <spinner name="x" MinValue="0" MaxValue="128" DefaultValue="0"/>
+         <spinner name="y" MinValue="0" MaxValue="64" DefaultValue="0"/>
+         <combo name="value">
+            <MenuEntries>
+               <string>hide</string>
+               <string>show</string>
+            </MenuEntries>
+            <CEntries>
+               <string>0</string>
+               <string>1</string>
+            </CEntries>
+         </combo>
+         <spinner name="width" MinValue="0" MaxValue="128" DefaultValue="24"/>
+         <spinner name="height" MinValue="0" MaxValue="64" DefaultValue="24"/>
+         <table name="default" description="Default value as float for example enter: 31.25"/>
+         <table name="label"/>
+      </attribs>
+      <code.declaration><![CDATA[rootc::instancesketchy__render::dial_t dial;
+const char* label = "attr_label";
+const float default_value = 0;]]></code.declaration>
+      <code.init><![CDATA[dial.page = attr_page;
+dial.param = attr_param;
+dial.is_bipolar = (bool) attr_polarity;
+dial.x = attr_x;
+dial.y = attr_y;
+dial.width = attr_width;
+dial.height = attr_height;
+dial.label = label;
+dial.show_value = (bool) attr_value;
+dial.default_value = atof("attr_default") * (1 << 21);
+
+parent->instancesketchy__render_i.dial_init(&dial);]]></code.init>
+      <code.krate><![CDATA[parent->instancesketchy__render_i.dial_update(&dial);]]></code.krate>
+   </obj.normal>
+</objdefs>

@@ -1,0 +1,24 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="set current page param" uuid="c9cd5e8a-cc9b-41f1-868a-a1db3f07a564">
+      <license>GPL</license>
+      <inlets>
+         <frac32.positive name="value"/>
+      </inlets>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <spinner name="param" MinValue="0" MaxValue="127" DefaultValue="0"/>
+      </attribs>
+      <code.declaration><![CDATA[rootc::instancesketchy__params* param_table;
+rootc::instancesketchy__render* renderer;
+
+int32_t prev_value = 0;]]></code.declaration>
+      <code.init><![CDATA[param_table = &parent->instancesketchy__params_i;
+renderer = &parent->instancesketchy__render_i;]]></code.init>
+      <code.krate><![CDATA[if (prev_value != inlet_value) {
+	param_table->array[renderer->getCurrentPage()][attr_param] = inlet_value;
+	prev_value = inlet_value;
+}]]></code.krate>
+   </obj.normal>
+</objdefs>

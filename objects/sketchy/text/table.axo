@@ -1,9 +1,11 @@
 <objdefs appVersion="1.0.12">
-   <obj.normal id="table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900">
+   <obj.normal id="table" uuid="227c9a80-053f-42f5-9566-8645b2e30aab">
       <sDescription>Allocate table in RAM memory for texts to be displayed on an OLED screen. They can be drawn to the screen using the sketchy/renderer and also have to be defined as sketchy/table/objects.</sDescription>
       <author>Karlo Sono</author>
       <license>MIT</license>
-      <inlets/>
+      <inlets>
+         <bool32 name="print"/>
+      </inlets>
       <outlets/>
       <displays/>
       <params/>
@@ -13,14 +15,68 @@
          <spinner name="length" description="Maximum amount of characters in each string" MinValue="8" MaxValue="128" DefaultValue="32"/>
       </attribs>
       <code.declaration><![CDATA[static const uint32_t LENGTH = attr_entries;
-
 static const uint8_t STRING_LENGTH = attr_length;
 
-char array[LENGTH][STRING_LENGTH];
+char (*array)[STRING_LENGTH];
 
-bool dirty;]]></code.declaration>
+bool dirty;
+bool pprint = false;
+uint16_t next_free_slot;
+
+uint16_t registerEntry() {
+    if (next_free_slot >= LENGTH) {
+        LogTextMessage("WARNING: object table is full! Reusing last available slot!");
+        return LENGTH - 1;  
+    }
+
+    uint32_t slot = next_free_slot;
+    next_free_slot++;
+    return slot;
+}
+
+void itoa(char* str, int32_t num) {
+    char* ptr = str;
+    uint32_t unum;
+    
+    // Handle negative numbers
+    if (num < 0) {
+        *ptr++ = '-';
+        unum = -num;
+    } else {
+        unum = num;
+    }
+    
+    // Calculate digits in reverse order
+    char temp[11];  // Max 10 digits for 32-bit int + null
+    char* tp = temp;
+    
+    do {
+        // Use faster multiply/shift instead of division
+        uint32_t remainder = unum - ((unum * 0xCCCD) >> 19) * 10;
+        *tp++ = remainder + '0';
+        unum = (unum * 0xCCCD) >> 19;  // Divide by 10
+    } while (unum > 0);
+    
+    // Copy reversed digits to output
+    while (tp > temp) {
+        *ptr++ = *--tp;
+    }
+    *ptr = '\0';
+}]]></code.declaration>
       <code.init><![CDATA[dirty = true;
-array[LENGTH][STRING_LENGTH] = {};
+
+static char _array[LENGTH][STRING_LENGTH] __attribute__ ((section (".sdram")));
+array = _array;
+
+next_free_slot=0;
+
 attr_init;]]></code.init>
+      <code.krate><![CDATA[if (!pprint && inlet_print) {
+	for (uint16_t i = 0; i < next_free_slot; i++) {
+		LogTextMessage("text[%d]: %s", i, array[i]);
+	}
+}
+
+pprint = inlet_print;]]></code.krate>
    </obj.normal>
 </objdefs>

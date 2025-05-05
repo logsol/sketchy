@@ -1,9 +1,11 @@
 <objdefs appVersion="1.0.12">
-   <obj.normal id="renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63">
+   <obj.normal id="renderer" uuid="1a419c75-8597-4a98-a8b4-5c4b1fc0dc1e">
       <sDescription>The renderer object continuously renders visual objects to a connected SSD1306/1106 OLED display. Objects and texts must be defined and configured in the respective tables. Use a sketchy/object/table and sketchy/object/update to initialize and configure all visual elements. For rendering text you will also need a sketchy/text/table and sketchy/text/update. If you do not want to render text, just initialize an empty sketchy/text/table and set entries to 0.</sDescription>
       <author>Karlo Sono</author>
       <license>MIT</license>
       <inlets>
+         <int32.positive name="page" description="set current page"/>
+         <int32.positive name="layout" description="set layout page (always visible)"/>
          <bool32.rising name="print" description="Will log the state of the object table to axoloti window"/>
       </inlets>
       <outlets>
@@ -33,15 +35,38 @@
                <string>0x3D</string>
             </CEntries>
          </combo>
-         <objref name="objects" description="reference to a sketchy/object/table"/>
-         <objref name="texts" description="reference to a sketchy/text/table (if needed)"/>
       </attribs>
       <depends>
          <depend>SD1</depend>
-         <depend>I2CD1</depend>
          <depend>SPID1</depend>
+         <depend>I2CD1</depend>
       </depends>
-      <code.declaration><![CDATA[#include "./font5x8_offset.h"
+      <code.declaration><![CDATA[/*
+rootc* findRoot(void* startPoint) {
+    // Try to interpret as rootc first
+    rootc* asRoot = static_cast<rootc*>(startPoint);
+    if (asRoot && asRoot->NPEXCH == 1) {  // Or another unique root identifier
+        return asRoot;
+    }
+
+    // If not root, follow the parent pointer
+    // Assuming parent is first member of all patch classes
+    void** parentPtr = (void**)startPoint;
+    if (*parentPtr) {
+        return findRoot(*parentPtr);
+    }
+
+    return nullptr;
+}
+*/
+
+rootc::instancesketchy__objects* object_table;
+rootc::instancesketchy__texts* text_table;
+rootc::instancesketchy__params* param_table;
+rootc::instancesketchy__font* font;
+
+uint16_t page;
+uint16_t layout;
 
 enum SSD1306 {
 	LCDWIDTH            = 128,
@@ -169,7 +194,7 @@ static msg_t ThreadX(void *arg) {
 }
 
 /* 128 is not enough, try 192 <-- */
-WORKING_AREA(waThreadX, 1024);
+WORKING_AREA(waThreadX, 2048);
 Thread *Thd;
 
 // --------------------------- Graphics ----------------------------------
@@ -178,7 +203,7 @@ uint16_t fps_limit_counter;
 bool pprint;
 bool prender;
 
-void draw_pixel(int16_t x, int16_t y, uint8_t color) {
+void draw_pixel(int16_t x, int16_t y, uint8_t color) __attribute__ ((noinline)) {
 	uint8_t page, bit;
 
 	if (x < 0 || y < 0 || x >= LCDWIDTH || y >= LCDHEIGHT - 1) {
@@ -201,7 +226,7 @@ void draw_pixel(int16_t x, int16_t y, uint8_t color) {
 	}
 }
 
-void draw_scaled_pixel(int16_t x, int16_t y, uint8_t color, uint8_t scale = 1) {
+void draw_scaled_pixel(int16_t x, int16_t y, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (scale == 0) {
 		scale = 1;
 	}
@@ -229,7 +254,7 @@ void draw_scaled_pixel(int16_t x, int16_t y, uint8_t color, uint8_t scale = 1) {
  * Bresenham algorithm from Adafruit GFX
  * https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp#L132
  */
-void draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color, uint8_t scale = 1) {
+void draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 
 	int16_t steep = abs(y1 - y0) > abs(x1 - x0);
 	if (steep) {    
@@ -269,13 +294,13 @@ void draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color, ui
 	}
 }
 
-void draw_string_from_index(int text_id, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, bool center, bool center_v = false, uint8_t scale = 1) {
-    const char* str = attr_texts.array[text_id];
+void draw_string_from_index(int text_id, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, bool center, bool center_v = false, uint8_t scale = 1) __attribute__ ((noinline)) {
+    const char* str = parent->instancesketchy__texts_i.array[text_id];
     int16_t char_width = 5;  // Actual character width
     int16_t char_spacing = 1; // Spacing after each character
     int16_t total_char_width = char_width + char_spacing;
-    int16_t char_height = 8; // Assuming 8px height based on font5x8_offset
-    size_t max_length = attr_texts.STRING_LENGTH;
+    int16_t char_height = font->height; // Assume 8px height in case of font: font5x8_offset
+    size_t max_length = parent->instancesketchy__texts_i.STRING_LENGTH;
 
     // First pass: Calculate total height (only if vertical centering is requested)
     int total_lines = 0;
@@ -362,7 +387,7 @@ void draw_string_from_index(int text_id, int16_t x, int16_t y, int16_t w, int16_
 }
 
 // Helper function to draw a character with clipping (unchanged)
-void draw_char_clipped(char c, int16_t x, int16_t y, int16_t clip_x, int16_t clip_y, int16_t clip_w, int16_t clip_h, uint8_t color, uint8_t scale = 1) {
+void draw_char_clipped(char c, int16_t x, int16_t y, int16_t clip_x, int16_t clip_y, int16_t clip_w, int16_t clip_h, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (c < 32 || c > 127) {
 		return; // Skip non-printable characters
 	}
@@ -370,7 +395,7 @@ void draw_char_clipped(char c, int16_t x, int16_t y, int16_t clip_x, int16_t cli
 	int index = (c - 32) * 5;
 
 	for (int col = clip_x; col < clip_x + clip_w && col < 5; col++) {
-		uint8_t column_data = font5x8_offset[index + col];
+		uint8_t column_data = font->data[index + col];
 
 		for (int row = clip_y; row < clip_y + clip_h && row < 8; row++) {
 			if (column_data & (1 << row)) {
@@ -380,7 +405,7 @@ void draw_char_clipped(char c, int16_t x, int16_t y, int16_t clip_x, int16_t cli
 	}
 }
 
-void draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+void draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (w == 0 || h == 0) return;  // Don't draw if width or height is zero
 
 	int16_t x_end = x + w - (w > 0 ? 1 : -1);
@@ -396,7 +421,7 @@ void draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_
 	}
 }
 
-void draw_filled_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+void draw_filled_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (w == 0 || h == 0) return;  // Don't draw if width or height is zero
 
 	int16_t x_start = (w > 0) ? x : x + w + 1;
@@ -409,7 +434,7 @@ void draw_filled_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color,
 	}
 }
 
-void draw_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+void draw_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (abs(w) < 5 || abs(h) < 5) {
 		draw_rect(x, y, w, h, color, scale);
 		return;
@@ -430,7 +455,7 @@ void draw_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color
 	draw_scaled_pixel(x_end - 1, y_end - 1, color, scale);
 }
 
-void draw_filled_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) {
+void draw_filled_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, uint8_t scale = 1) __attribute__ ((noinline)) {
 	if (abs(w) < 5 || abs(h) < 5) {
 		draw_filled_rect(x, y, w, h, color, scale);
 		return;
@@ -457,77 +482,200 @@ void draw_filled_rounded_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_
 	}
 }
 
-void render() {
-	for (uint8_t i = 0; i < attr_objects.LENGTH; i++) {
-		if (attr_objects.array[i][attr_objects.FIELD_TYPE] == attr_objects.TYPE_INVISIBLE) {
+void render() __attribute__ ((noinline)) {
+	for (uint8_t i = 0; i < parent->instancesketchy__objects_i.LENGTH; i++) {
+		if (parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TYPE] == parent->instancesketchy__objects_i.TYPE_INVISIBLE) {
+			continue;
+		}
+		uint16_t current_object_page = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_PAGE];
+		if (current_object_page != page && current_object_page != layout) {
 			continue;
 		}
 		
-		int16_t x = attr_objects.array[i][attr_objects.FIELD_X];
-		int16_t y = attr_objects.array[i][attr_objects.FIELD_Y];
-		int16_t w = attr_objects.array[i][attr_objects.FIELD_W];
-		int16_t h = attr_objects.array[i][attr_objects.FIELD_H];
-		uint8_t color = attr_objects.array[i][attr_objects.FIELD_COLOR];
-		uint8_t scale = attr_objects.array[i][attr_objects.FIELD_SCALE];
+		int16_t x = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_X];
+		int16_t y = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_Y];
+		int16_t w = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_W];
+		int16_t h = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_H];
+		uint8_t color = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_COLOR];
+		uint8_t scale = parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_SCALE];
 
-		switch (attr_objects.array[i][attr_objects.FIELD_TYPE]) {
-			case attr_objects.TYPE_RECT:
+		switch (parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TYPE]) {
+			case parent->instancesketchy__objects_i.TYPE_RECT:
 				draw_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_objects.TYPE_FILLED_RECT:
+			case parent->instancesketchy__objects_i.TYPE_FILLED_RECT:
 				draw_filled_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_objects.TYPE_ROUNDED_RECT:
+			case parent->instancesketchy__objects_i.TYPE_ROUNDED_RECT:
 				draw_rounded_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_objects.TYPE_FILLED_ROUNDED_RECT:
+			case parent->instancesketchy__objects_i.TYPE_FILLED_ROUNDED_RECT:
 				draw_filled_rounded_rect(x, y, w, h, color, scale);
 				break;
 
-			case attr_objects.TYPE_LINE:
-				if (i > 0 && attr_objects.array[i - 1][attr_objects.FIELD_TYPE] == attr_objects.TYPE_LINE) {
-					int16_t prev_x = attr_objects.array[i - 1][attr_objects.FIELD_X];
-					int16_t prev_y = attr_objects.array[i - 1][attr_objects.FIELD_Y];
+			case parent->instancesketchy__objects_i.TYPE_LINE:
+				if (i > 0 && parent->instancesketchy__objects_i.array[i - 1][parent->instancesketchy__objects_i.FIELD_TYPE] == parent->instancesketchy__objects_i.TYPE_LINE) {
+					int16_t prev_x = parent->instancesketchy__objects_i.array[i - 1][parent->instancesketchy__objects_i.FIELD_X];
+					int16_t prev_y = parent->instancesketchy__objects_i.array[i - 1][parent->instancesketchy__objects_i.FIELD_Y];
 					draw_line(prev_x, prev_y, x, y, color, scale);
 				}
 				break;
 
-			case attr_objects.TYPE_TEXT:
+			case parent->instancesketchy__objects_i.TYPE_TEXT:
 				draw_string_from_index(
-					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
+					parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TEXT_ID], 
 					x, y, w, h, color, false, false, scale
 				);
 				break;
 
-			case attr_objects.TYPE_TEXT_CENTER_X:
+			case parent->instancesketchy__objects_i.TYPE_TEXT_CENTER_X:
 				draw_string_from_index(
-					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
+					parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TEXT_ID], 
 					x, y, w, h, color, true, false, scale
 				);
 				break;
 
-			case attr_objects.TYPE_TEXT_CENTER_Y:
+			case parent->instancesketchy__objects_i.TYPE_TEXT_CENTER_Y:
 				draw_string_from_index(
-					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
+					parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TEXT_ID], 
 					x, y, w, h, color, false, true, scale
 				);
 				break;
 
-			case attr_objects.TYPE_TEXT_CENTER_BOTH:
+			case parent->instancesketchy__objects_i.TYPE_TEXT_CENTER_BOTH:
 				draw_string_from_index(
-					attr_objects.array[i][attr_objects.FIELD_TEXT_ID], 
+					parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TEXT_ID], 
 					x, y, w, h, color, true, true, scale
 				);
 				break;
 		}
 	}
 
-	attr_objects.dirty = false;
+	parent->instancesketchy__objects_i.dirty = false;
+}
+
+uint16_t getCurrentPage() __attribute__ ((noinline)) {
+	return page;
+}
+
+typedef struct {
+    uint16_t box_object_id;
+    uint16_t label_object_id;
+    uint16_t label_text_id;
+    int32_t last_value;
+    int32_t page;
+    int32_t param;
+    bool is_bipolar;
+    int32_t x;
+    int32_t y;
+    int32_t width;
+    int32_t height;
+    const char* label;
+    bool show_value;
+} dial_t;
+
+void init(dial_t* dial) __attribute__ ((noinline)) { 
+	
+   // table pointers
+   rootc::instancesketchy__objects* object_table = &parent->instancesketchy__objects_i;
+   rootc::instancesketchy__texts* text_table = &parent->instancesketchy__texts_i;
+   rootc::instancesketchy__params* param_table = &parent->instancesketchy__params_i;
+
+   // Register and get ids
+   dial->box_object_id = object_table->registerEntry();
+   dial->label_object_id = object_table->registerEntry();
+   dial->label_text_id = text_table->registerEntry();
+
+   // Setup box object
+   object_table->array[dial->box_object_id][object_table->FIELD_TYPE] = 2;
+   object_table->array[dial->box_object_id][object_table->FIELD_X] = dial->x;
+   object_table->array[dial->box_object_id][object_table->FIELD_Y] = dial->y;
+   object_table->array[dial->box_object_id][object_table->FIELD_W] = dial->width;
+   object_table->array[dial->box_object_id][object_table->FIELD_H] = 0;
+   object_table->array[dial->box_object_id][object_table->FIELD_COLOR] = 0;
+   object_table->array[dial->box_object_id][object_table->FIELD_SCALE] = 1;
+   object_table->array[dial->box_object_id][object_table->FIELD_TEXT_ID] = 0;
+   object_table->array[dial->box_object_id][object_table->FIELD_PAGE] = dial->page;
+
+   // Setup label object
+   object_table->array[dial->label_object_id][object_table->FIELD_TYPE] = 9;
+   object_table->array[dial->label_object_id][object_table->FIELD_X] = dial->x;
+   object_table->array[dial->label_object_id][object_table->FIELD_Y] = dial->y;
+   object_table->array[dial->label_object_id][object_table->FIELD_W] = dial->width;
+   object_table->array[dial->label_object_id][object_table->FIELD_H] = dial->height;
+   object_table->array[dial->label_object_id][object_table->FIELD_COLOR] = 2;
+   object_table->array[dial->label_object_id][object_table->FIELD_SCALE] = 1;
+   object_table->array[dial->label_object_id][object_table->FIELD_TEXT_ID] = dial->label_text_id;
+   object_table->array[dial->label_object_id][object_table->FIELD_PAGE] = dial->page;
+
+   // Setup label text
+   strcpy(text_table->array[dial->label_text_id], dial->label);
+}
+
+void update(dial_t* dial, bool test = false) __attribute__ ((noinline)) {
+
+   // table pointers
+   rootc::instancesketchy__objects* object_table = &parent->instancesketchy__objects_i;
+   rootc::instancesketchy__texts* text_table = &parent->instancesketchy__texts_i;
+   rootc::instancesketchy__params* param_table = &parent->instancesketchy__params_i;
+	
+   int32_t value = param_table->array[dial->page][dial->param];
+
+   if (test) {
+	LogTextMessage("value: %d", value);
+   }
+
+   // Abort if value is the same
+   if (value == dial->last_value) {
+       return;
+   }
+
+   dial->last_value = value;
+
+   // if needed, shift value regularly or shifted into bipolar range
+   if (dial->is_bipolar) {
+       value = (value-(1<<26))<<1;
+   }
+
+   // Convert value to -64.0 to 64.0 range float
+   float frac_value = ((float)value / 0x00200000);
+
+   if (test) {
+	LogTextMessage("frac value: %d", frac_value);
+   }
+
+   // Convert value to -1.0 to 1.0 range float (normalize)
+   float norm_value = frac_value / 64.0f;
+
+   if (dial->is_bipolar) {
+       int8_t h = (dial->height/2.0f) * norm_value + 0.5f; // add 0.5 for proper rounding
+       object_table->array[dial->box_object_id][object_table->FIELD_H] = h;
+       object_table->array[dial->box_object_id][object_table->FIELD_Y] = dial->y+(dial->height-h) - dial->height/2;
+   } else {
+       uint8_t h = dial->height * norm_value + 0.5f; // add 0.5 for proper rounding
+       object_table->array[dial->box_object_id][object_table->FIELD_H] = h;
+       object_table->array[dial->box_object_id][object_table->FIELD_Y] = dial->y+(dial->height-h);
+   }
+
+   // Update label text
+   if (dial->show_value) {
+       int rounded = (frac_value >= 0) ? (int)(frac_value + 0.5) : (int)(frac_value - 0.5);
+       char value_str[8] = "";
+       text_table->itoa(value_str, rounded);
+       strcpy(text_table->array[dial->label_text_id], dial->label);
+       strcat(text_table->array[dial->label_text_id], " ");
+       strcat(text_table->array[dial->label_text_id], value_str);
+   }
 }]]></code.declaration>
-      <code.init><![CDATA[// setup the pins
+      <code.init><![CDATA[object_table = &parent->instancesketchy__objects_i;
+text_table = &parent->instancesketchy__texts_i;
+param_table = &parent->instancesketchy__params_i;
+font = &parent->instancesketchy__font_i;
+
+// setup the pins
 palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(4)|PAL_STM32_PUDR_PULLUP|PAL_STM32_OTYPE_OPENDRAIN);// SCL
 palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(4)|PAL_STM32_PUDR_PULLUP|PAL_STM32_OTYPE_OPENDRAIN);// SDA
 static const I2CConfig i2cfg = {
@@ -538,13 +686,11 @@ static const I2CConfig i2cfg = {
 i2cStart(&I2CD1, &i2cfg);
 Thd = chThdCreateStatic(waThreadX, sizeof(waThreadX), NORMALPRIO, ThreadX, (void *)this);
 
-for (uint8_t page = 0; page < 8; page++) {
-  for (uint8_t i = 0; i < 128; i++) {
-    pixels[page][i] = 0b00000000;
-  }
-}
+clear();
 
-pprint = false;]]></code.init>
+pprint = false;
+page = 0;
+layout = 0xFFFF;]]></code.init>
       <code.dispose><![CDATA[chThdTerminate( Thd );
 chThdWait( Thd );
 i2cStop(&I2CD1);
@@ -552,17 +698,17 @@ palSetPadMode(GPIOB, 8, PAL_MODE_INPUT_ANALOG);
 palSetPadMode(GPIOB, 9, PAL_MODE_INPUT_ANALOG);]]></code.dispose>
       <code.krate><![CDATA[if (inlet_print && !pprint) {
   pprint = true;
-  for (uint8_t i = 0; i < attr_objects.LENGTH; i++) {
+  for (uint8_t i = 0; i < parent->instancesketchy__objects_i.LENGTH; i++) {
     LogTextMessage(
       "i: %3d, type: %3d, x: %3d, y: %3d, w: %3d, h: %3d, color: %3d, text_id: %3d",
       i,
-      attr_objects.array[i][attr_objects.FIELD_TYPE],
-      attr_objects.array[i][attr_objects.FIELD_X], 
-      attr_objects.array[i][attr_objects.FIELD_Y], 
-      attr_objects.array[i][attr_objects.FIELD_W],
-      attr_objects.array[i][attr_objects.FIELD_H], 
-      attr_objects.array[i][attr_objects.FIELD_COLOR],
-      attr_objects.array[i][attr_objects.FIELD_TEXT_ID]
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TYPE],
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_X], 
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_Y], 
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_W],
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_H], 
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_COLOR],
+      parent->instancesketchy__objects_i.array[i][parent->instancesketchy__objects_i.FIELD_TEXT_ID]
     );
   }
   LogTextMessage("");
@@ -571,6 +717,14 @@ palSetPadMode(GPIOB, 9, PAL_MODE_INPUT_ANALOG);]]></code.dispose>
 if (!inlet_print && pprint) {
   pprint = false;
 }
+
+if (page != inlet_page) {
+	page = inlet_page;
+}
+if (layout != inlet_layout) {
+	layout = inlet_layout;
+}
+
 
 outlet_sw = LCDWIDTH;
 outlet_sh = LCDHEIGHT;]]></code.krate>

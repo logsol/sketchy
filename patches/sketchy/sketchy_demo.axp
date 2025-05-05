@@ -1,0 +1,231 @@
+<patch-1.0 appVersion="1.0.12">
+   <obj type="sketchy/object/table" uuid="33169757-5339-4296-a6fd-66cca7728ce9" name="table_1" x="14" y="14">
+      <params/>
+      <attribs>
+         <text attributeName="init">
+            <sText><![CDATA[]]></sText>
+         </text>
+         <spinner attributeName="entries" value="128"/>
+      </attribs>
+   </obj>
+   <obj type="sketchy/renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63" name="renderer" x="168" y="14">
+      <params/>
+      <attribs>
+         <combo attributeName="type" selection="SH1106"/>
+         <combo attributeName="I2CADDR" selection="0x3C"/>
+         <objref attributeName="objects" obj="table_1"/>
+         <objref attributeName="texts" obj="table_2"/>
+      </attribs>
+   </obj>
+   <obj type="lfo/square" uuid="de6909eb64db13af5b43f979a4c130024b3a4793" name="every 3 seconds" x="420" y="28">
+      <params>
+         <frac32.s.map name="pitch" value="-48.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="logic/counter" uuid="7a141ba82230e54e5f5cd12da5dbe5a74ba854a5" name="cycle 6 types" x="532" y="28">
+      <params>
+         <int32 name="maximum" value="6"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="math/+1" uuid="13c1a4574bb81783beb8839e81782b9a34e3fc17" name="+1" x="630" y="28">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="sketchy/text/table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900" name="table_2" x="14" y="98">
+      <params/>
+      <attribs>
+         <text attributeName="init">
+            <sText><![CDATA[uint8_t i = 0;
+strcpy(array[i++], "S");
+strcpy(array[i++], "k");
+strcpy(array[i++], "e");
+strcpy(array[i++], "t");
+strcpy(array[i++], "c");
+strcpy(array[i++], "h");
+strcpy(array[i++], "y");
+strcpy(array[i++], " ");
+strcpy(array[i++], "e");
+strcpy(array[i++], "x");
+strcpy(array[i++], "a");
+strcpy(array[i++], "m");
+strcpy(array[i++], "p");
+strcpy(array[i++], "l");
+strcpy(array[i++], "e");
+strcpy(array[i++], "!");]]></sText>
+         </text>
+         <spinner attributeName="entries" value="16"/>
+         <spinner attributeName="length" value="8"/>
+      </attribs>
+   </obj>
+   <obj type="lfo/square" uuid="de6909eb64db13af5b43f979a4c130024b3a4793" name="FPS" x="14" y="238">
+      <params>
+         <frac32.s.map name="pitch" value="32.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="sketchy/utils/rapid_triggers" uuid="f0875364-e95e-442b-b597-869f3414ff2f" name="rapid triggers" x="126" y="238">
+      <params/>
+      <attribs>
+         <spinner attributeName="count" value="16"/>
+      </attribs>
+   </obj>
+   <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="* x" x="364" y="252">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="const/i" uuid="e202f44b2df17ae0b3e663b98ea6b14c8ff00408" name="x multiplier" x="266" y="266">
+      <params/>
+      <attribs>
+         <spinner attributeName="value" value="8"/>
+      </attribs>
+   </obj>
+   <obj type="ctrl/i" uuid="a3786816db6ea5bc6ac4193a5cccdb2c83b83496" name="width" x="546" y="266">
+      <params>
+         <int32 name="value" value="6"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="ctrl/i" uuid="a3786816db6ea5bc6ac4193a5cccdb2c83b83496" name="height" x="616" y="266">
+      <params>
+         <int32 name="value" value="12"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="math/+" uuid="b94a9b8e9adcb7d18868c0ee808a9b211b65578d" name="add" x="266" y="350">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="lfo/square" uuid="de6909eb64db13af5b43f979a4c130024b3a4793" name="phase shift speed" x="56" y="364">
+      <params>
+         <frac32.s.map name="pitch" value="25.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="logic/counter" uuid="7a141ba82230e54e5f5cd12da5dbe5a74ba854a5" name="count &amp; wrap" x="168" y="364">
+      <params>
+         <int32 name="maximum" value="64"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="sketchy/object/update" uuid="1a841356-5eca-48ed-a884-c642da9e205b" name="update_1" x="686" y="364">
+      <params/>
+      <attribs>
+         <objref attributeName="table" obj="table_1"/>
+      </attribs>
+   </obj>
+   <obj type="math/*" uuid="6a31299e3a491edd8c4df0e809a519a35cc08a3b" name="multiply" x="350" y="406">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="math/sin" uuid="1964a1eea162423ab0d4ad3526e1940bcd3a43cf" name="sine" x="420" y="406">
+      <params/>
+      <attribs/>
+   </obj>
+   <obj type="math/*c" uuid="7d5ef61c3bcd571ee6bbd8437ef3612125dfb225" name="amplitude" x="504" y="406">
+      <params>
+         <frac32.u.map name="amp" value="8.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="math/+c" uuid="13eec32bd8ad57dd0bb18a02566cc0a117d320e3" name="y shift" x="616" y="406">
+      <params>
+         <frac32.u.map name="c" value="30.0"/>
+      </params>
+      <attribs/>
+   </obj>
+   <obj type="ctrl/i" uuid="a3786816db6ea5bc6ac4193a5cccdb2c83b83496" name="freq" x="280" y="420">
+      <params>
+         <int32 name="value" value="3"/>
+      </params>
+      <attribs/>
+   </obj>
+   <nets>
+      <net>
+         <source obj="FPS" outlet="wave"/>
+         <dest obj="rapid triggers" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="rapid triggers" outlet="o"/>
+         <dest obj="update_1" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="amplitude" outlet="out"/>
+         <dest obj="y shift" inlet="in"/>
+      </net>
+      <net>
+         <source obj="y shift" outlet="out"/>
+         <dest obj="update_1" inlet="y"/>
+      </net>
+      <net>
+         <source obj="rapid triggers" outlet="count"/>
+         <dest obj="update_1" inlet="i"/>
+         <dest obj="update_1" inlet="textid"/>
+         <dest obj="* x" inlet="a"/>
+         <dest obj="add" inlet="in1"/>
+      </net>
+      <net>
+         <source obj="sine" outlet="out"/>
+         <dest obj="amplitude" inlet="in"/>
+      </net>
+      <net>
+         <source obj="x multiplier" outlet="out"/>
+         <dest obj="* x" inlet="b"/>
+      </net>
+      <net>
+         <source obj="* x" outlet="result"/>
+         <dest obj="update_1" inlet="x"/>
+      </net>
+      <net>
+         <source obj="count &amp; wrap" outlet="o"/>
+         <dest obj="add" inlet="in2"/>
+      </net>
+      <net>
+         <source obj="phase shift speed" outlet="wave"/>
+         <dest obj="count &amp; wrap" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="add" outlet="out"/>
+         <dest obj="multiply" inlet="a"/>
+      </net>
+      <net>
+         <source obj="freq" outlet="out"/>
+         <dest obj="multiply" inlet="b"/>
+      </net>
+      <net>
+         <source obj="multiply" outlet="result"/>
+         <dest obj="sine" inlet="phase"/>
+      </net>
+      <net>
+         <source obj="width" outlet="out"/>
+         <dest obj="update_1" inlet="w"/>
+      </net>
+      <net>
+         <source obj="height" outlet="out"/>
+         <dest obj="update_1" inlet="h"/>
+      </net>
+      <net>
+         <source obj="every 3 seconds" outlet="wave"/>
+         <dest obj="cycle 6 types" inlet="trig"/>
+      </net>
+      <net>
+         <source obj="cycle 6 types" outlet="o"/>
+         <dest obj="+1" inlet="a"/>
+      </net>
+      <net>
+         <source obj="+1" outlet="result"/>
+         <dest obj="update_1" inlet="type"/>
+      </net>
+   </nets>
+   <settings>
+      <subpatchmode>no</subpatchmode>
+   </settings>
+   <notes><![CDATA[]]></notes>
+   <windowPos>
+      <x>101</x>
+      <y>61</y>
+      <width>1284</width>
+      <height>837</height>
+   </windowPos>
+</patch-1.0>

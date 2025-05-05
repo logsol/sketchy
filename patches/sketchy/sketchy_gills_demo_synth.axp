@@ -15,7 +15,7 @@
    </obj>
    <comment type="patch/comment" x="966" y="42" text="Display parameter descriptions"/>
    <comment type="patch/comment" x="1218" y="42" text="Object types:"/>
-   <obj type="sketchy/object/table" uuid="33169757-5339-4296-a6fd-66cca7728ce9" name="object table" x="14" y="56">
+   <obj type="sketchy/object/table" uuid="33169757-5339-4296-a6fd-66cca7728ce9" name="object_table" x="14" y="56">
       <params/>
       <attribs>
          <text attributeName="init">
@@ -86,16 +86,16 @@ i++;
       </params>
       <attribs/>
    </obj>
-   <obj type="sketchy/renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63" name="renderer" x="322" y="56">
+   <obj type="sketchy/renderer" uuid="8a82dea1-eb6a-412d-a00f-85994fa23a63" name="renderer_1" x="322" y="56">
       <params/>
       <attribs>
          <combo attributeName="type" selection="SH1106"/>
          <combo attributeName="I2CADDR" selection="0x3C"/>
-         <objref attributeName="table" obj="object_table"/>
-         <objref attributeName="text" obj="text_table"/>
+         <objref attributeName="objects" obj="object_table"/>
+         <objref attributeName="texts" obj="text_table"/>
       </attribs>
    </obj>
-   <patcher type="patch/patcher" uuid="ac16b1b9-236d-4cc4-ba49-03dcee31bdc8" name="text positions" x="938" y="56">
+   <patcher type="patch/patcher" uuid="02aa495b-cce5-4715-b1dd-f1b687ea309c" name="text positions" x="938" y="56">
       <params/>
       <attribs/>
       <subpatch appVersion="1.0.12">
@@ -305,7 +305,7 @@ i++;
    <comment type="patch/comment" x="14" y="140" text="Initialize the text table"/>
    <comment type="patch/comment" x="1232" y="140" text="6: text (top-left aligned)"/>
    <comment type="patch/comment" x="1232" y="154" text="7: text (x centered)"/>
-   <obj type="sketchy/text/table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900" name="table_1" x="14" y="168">
+   <obj type="sketchy/text/table" uuid="fd6d94b3-e971-4fe4-a139-7d8ae2a71900" name="text_table" x="14" y="168">
       <params/>
       <attribs>
          <text attributeName="init">
@@ -344,7 +344,7 @@ i++;
       </attribs>
    </obj>
    <comment type="patch/comment" x="952" y="294" text="Display poti values as rectangles"/>
-   <patcher type="patch/patcher" uuid="a5b0086e-b18d-4919-aca2-416c0f017adb" name="poti values -&gt; rect" x="910" y="308">
+   <patcher type="patch/patcher" uuid="44eff01e-e573-43ab-8a8e-0ad5478a6f9c" name="poti values -&gt; rect" x="910" y="308">
       <params/>
       <attribs/>
       <subpatch appVersion="1.0.12">
@@ -762,7 +762,7 @@ i++;
       </attribs>
    </obj>
    <comment type="patch/comment" x="980" y="574" text="Audio engine"/>
-   <patcher type="patch/patcher" uuid="e403b68f-71a3-48c5-be64-7d7da03c0bbe" name="synth" x="910" y="588">
+   <patcher type="patch/patcher" uuid="bf94eebf-7542-421e-b967-0c89fa0879cd" name="synth" x="910" y="588">
       <params/>
       <attribs/>
       <subpatch appVersion="1.0.12">
@@ -1326,15 +1326,11 @@ for (uint8_t i = 0; i < BUFSIZE; i++) {
    <nets>
       <net>
          <source obj="print table" outlet="o"/>
-         <dest obj="renderer" inlet="print"/>
+         <dest obj="renderer_1" inlet="print"/>
       </net>
       <net>
          <source obj="text positions" outlet="i"/>
          <dest obj="text object settings" inlet="i"/>
-      </net>
-      <net>
-         <source obj="text positions" outlet="type"/>
-         <dest obj="text object settings" inlet="type"/>
       </net>
       <net>
          <source obj="text positions" outlet="x"/>
@@ -1511,6 +1507,10 @@ for (uint8_t i = 0; i < BUFSIZE; i++) {
          <source obj="text positions" outlet="scale"/>
          <dest obj="text object settings" inlet="scale"/>
       </net>
+      <net>
+         <source obj="text positions" outlet="type"/>
+         <dest obj="text object settings" inlet="type"/>
+      </net>
    </nets>
    <settings>
       <subpatchmode>no</subpatchmode>
@@ -1522,8 +1522,8 @@ for (uint8_t i = 0; i < BUFSIZE; i++) {
    </settings>
    <notes><![CDATA[]]></notes>
    <windowPos>
-      <x>295</x>
-      <y>38</y>
+      <x>235</x>
+      <y>312</y>
       <width>1217</width>
       <height>944</height>
    </windowPos>

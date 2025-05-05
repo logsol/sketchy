@@ -1,0 +1,38 @@
+<objdefs appVersion="1.0.12">
+   <obj.normal id="set current page param 10" uuid="df438025-5a55-4d2d-ad5f-5ff2d325c277">
+      <license>GPL</license>
+      <inlets>
+         <frac32.positive name="value1"/>
+         <frac32.positive name="value2"/>
+         <frac32.positive name="value3"/>
+         <frac32.positive name="value4"/>
+         <frac32.positive name="value5"/>
+         <frac32.positive name="value6"/>
+         <frac32.positive name="value7"/>
+         <frac32.positive name="value8"/>
+         <frac32.positive name="value9"/>
+         <frac32.positive name="value10"/>
+      </inlets>
+      <outlets/>
+      <displays/>
+      <params/>
+      <attribs>
+         <spinner name="firstparam" MinValue="0" MaxValue="118" DefaultValue="0"/>
+      </attribs>
+      <code.declaration><![CDATA[rootc::instancesketchy__params* param_table;
+rootc::instancesketchy__render* renderer;
+
+int32_t prev_values[10] = {0};]]></code.declaration>
+      <code.init><![CDATA[param_table = &parent->instancesketchy__params_i;
+renderer = &parent->instancesketchy__render_i;]]></code.init>
+      <code.krate><![CDATA[int32_t current_values[10] = {inlet_value1, inlet_value2, inlet_value3, inlet_value4, inlet_value5,
+                           inlet_value6, inlet_value7, inlet_value8, inlet_value9, inlet_value10};
+
+for(int i=0; i<10; i++) {
+    if (prev_values[i] != current_values[i]) {
+        param_table->array[renderer->getCurrentPage()][attr_firstparam + i] = current_values[i];
+        prev_values[i] = current_values[i];
+    }
+}]]></code.krate>
+   </obj.normal>
+</objdefs>
